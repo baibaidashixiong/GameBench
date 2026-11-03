@@ -228,6 +228,9 @@ void print_engine_adapters() {
     case benchmark::EngineAvailability::Available:
       status = "available";
       break;
+    case benchmark::EngineAvailability::DetectedOnly:
+      status = "detected-only";
+      break;
     case benchmark::EngineAvailability::MissingDependency:
       status = "missing";
       break;

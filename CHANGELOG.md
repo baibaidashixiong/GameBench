@@ -35,4 +35,5 @@
 - 增加单工作负载吞吐与线程扩展评分，不跨操作单位生成虚假综合分。
 - 增加离线 HTML 结果查看器、CSV 导出和多结果比较视图。
 - 增加安装规则、CPack TGZ、Release 脚本和 GitHub Actions 构建矩阵。
+- 增加 Source 2 Engine Adapter 探测，支持 `SOURCE2_BIN` 与 `SOURCE2_ROOT`，并明确标记为仅检测到、不可执行。
 

@@ -20,7 +20,7 @@
 | 5 | Vulkan Backend | 已完成 |
 | 6 | Physics、Animation、AI、Audio | 已完成 |
 | 7 | CPU Topology、Affinity、Profiling | 已完成 |
-| 8 | 引擎适配器与 Godot 集成 | 接口完成，执行桥接待外部引擎 |
+| 8 | 引擎适配器与 Godot、Source 2 集成 | 接口完成，执行桥接待外部引擎 |
 | 9 | 结果查看器与正式发布 | 已完成 |
 
 ## 里程碑 0：项目基础设施
@@ -85,7 +85,7 @@
 ## 里程碑 8：引擎适配
 
 - 稳定 Engine Adapter 接口。
-- 优先实现可选 Godot 集成，其后评估 Unreal Engine 5 与 O3DE。
+- 优先实现可选 Godot 集成，加入 Source 2 显式工具链探测，其后评估 Unreal Engine 5 与 O3DE。
 - 引擎后端结果与 Synthetic 结果分开评分。
 
 ## 里程碑 9：结果查看器与发布

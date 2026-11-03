@@ -9,7 +9,7 @@
 
 namespace gamebench::benchmark {
 
-enum class EngineAvailability { Available, MissingDependency, NotImplemented };
+enum class EngineAvailability { Available, DetectedOnly, MissingDependency, NotImplemented };
 
 struct EngineAdapterInfo {
   std::string id;
@@ -45,6 +45,7 @@ public:
 };
 
 [[nodiscard]] auto detect_godot_adapter() -> EngineAdapterInfo;
+[[nodiscard]] auto detect_source2_adapter() -> EngineAdapterInfo;
 [[nodiscard]] auto planned_engine_adapters() -> std::vector<EngineAdapterInfo>;
 
 } // namespace gamebench::benchmark

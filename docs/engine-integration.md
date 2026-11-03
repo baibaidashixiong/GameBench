@@ -14,6 +14,8 @@
 
 Godot 4 已实现安装探测：优先读取 `GODOT_BIN`，其次搜索 PATH 中的 `godot4` 和 `godot`。探测结果可通过 `gamebench engine-info` 查看。实体执行桥接与结果导入仍需在安装 Godot 后完成，因此当前不会出现在 Synthetic 工作负载列表中。
 
+Source 2 已登记适配器契约。由于 Source 2 没有通用公开 SDK，GameBench 不扫描或猜测普通 Steam 游戏路径，只接受显式 `SOURCE2_BIN` 或 `SOURCE2_ROOT`。可识别 `resourcecompiler`、`cs2`、`dota2` 和 `hammer` 等本地工具布局；即使检测成功，也只标记为 `detected-only`，因为 Valve 尚未提供可在 GameBench 中调用的统一无头 Benchmark 接口。
+
 Unreal Engine 5 与 O3DE 只登记接口和未实现状态，不提供虚假运行命令。
 
 ## Godot 接入约束
@@ -30,4 +32,5 @@ Unreal Engine 5 与 O3DE 只登记接口和未实现状态，不提供虚假运�
 2. 通过无 shell 的子进程接口启动引擎并收集 stdout 结果。
 3. 将 Engine 结果转换为独立 JSON schema，并与 Synthetic 结果分开比较。
 4. UE5 与 O3DE 复用相同适配器接口，分别维护版本兼容矩阵。
+5. Source 2 只有在获得合法工具链和稳定的无头结果协议后才进入 `detected-only` 之外的执行阶段；不得把启动游戏客户端的时间当作 CPU Benchmark。
 
