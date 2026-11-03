@@ -34,4 +34,30 @@ auto to_string(ExportFormat format) -> std::string_view {
   return "unknown";
 }
 
+auto to_string(DataLayout layout) -> std::string_view {
+  switch (layout) {
+  case DataLayout::AoS:
+    return "aos";
+  case DataLayout::SoA:
+    return "soa";
+  case DataLayout::AoSoA:
+    return "aosoa";
+  }
+  return "unknown";
+}
+
+auto to_string(MemoryPattern pattern) -> std::string_view {
+  switch (pattern) {
+  case MemoryPattern::Sequential:
+    return "sequential";
+  case MemoryPattern::Random:
+    return "random";
+  case MemoryPattern::PointerChasing:
+    return "pointer-chasing";
+  case MemoryPattern::Strided:
+    return "strided";
+  }
+  return "unknown";
+}
+
 } // namespace gamebench::core

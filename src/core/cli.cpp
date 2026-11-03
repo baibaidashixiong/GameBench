@@ -77,6 +77,9 @@ void print_help() {
             << "  --threads <1,2,4>        线程数量列表\n"
             << "  --mode <reproducible|realistic>\n"
             << "  --scheduler <global-queue|static-partitioning|work-stealing>\n"
+            << "  --layout <aos|soa|aosoa> ECS 数据布局\n"
+            << "  --pattern <sequential|random|pointer-chasing|strided> 内存访问模式\n"
+            << "  --working-set <字节>     内存工作集大小\n"
             << "  --seed <整数>            固定随机种子\n"
             << "  --objects <数量>         工作负载规模\n"
             << "  --iterations <数量>      每个样本内的工作负载迭代数\n"
@@ -117,6 +120,35 @@ void print_help() {
     return ExportFormat::Csv;
   }
   throw std::invalid_argument("--format 仅支持 json 或 csv");
+}
+
+[[nodiscard]] auto parse_layout(std::string_view value) -> DataLayout {
+  if (value == "aos") {
+    return DataLayout::AoS;
+  }
+  if (value == "soa") {
+    return DataLayout::SoA;
+  }
+  if (value == "aosoa") {
+    return DataLayout::AoSoA;
+  }
+  throw std::invalid_argument("--layout 仅支持 aos、soa 或 aosoa");
+}
+
+[[nodiscard]] auto parse_memory_pattern(std::string_view value) -> MemoryPattern {
+  if (value == "sequential") {
+    return MemoryPattern::Sequential;
+  }
+  if (value == "random") {
+    return MemoryPattern::Random;
+  }
+  if (value == "pointer-chasing") {
+    return MemoryPattern::PointerChasing;
+  }
+  if (value == "strided") {
+    return MemoryPattern::Strided;
+  }
+  throw std::invalid_argument("--pattern 的值无效");
 }
 
 void print_system_info() {
@@ -252,6 +284,13 @@ auto parse_run_config(std::span<const std::string_view> arguments) -> RunConfig 
       config.mode = parse_mode(option_value(arguments, index));
     } else if (option == "--scheduler") {
       config.scheduler = parse_scheduler(option_value(arguments, index));
+    } else if (option == "--layout") {
+      config.layout = parse_layout(option_value(arguments, index));
+    } else if (option == "--pattern") {
+      config.memory_pattern = parse_memory_pattern(option_value(arguments, index));
+    } else if (option == "--working-set") {
+      config.working_set_bytes =
+          parse_integer<std::uint64_t>(option_value(arguments, index), option);
     } else if (option == "--seed") {
       config.seed = parse_integer<std::uint64_t>(option_value(arguments, index), option);
     } else if (option == "--objects") {

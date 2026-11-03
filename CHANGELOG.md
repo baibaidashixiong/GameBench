@@ -14,4 +14,7 @@
 - 实现基于 `std::jthread` 的 Job System、原子依赖、异常传播和安全关闭。
 - 支持 Global Queue、Static Partitioning、Work Stealing 三种调度模式。
 - 添加调度工作负载、任务计数与窃取次数统计，并通过 ASan、UBSan、TSan 测试。
+- 实现 AoS、SoA、AoSoA 三种 ECS 组件布局及实体创建、销毁和并行更新。
+- 实现 Arena、Pool、顺序、随机、跨步与 Pointer Chasing 内存工作负载。
+- 增加 ECS 布局和内存访问模式 CLI 配置与结果元数据。
 

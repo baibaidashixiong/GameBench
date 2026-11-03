@@ -30,6 +30,7 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
     }
     if (measure) {
       run.samples_ms.push_back(milliseconds_since(start, end));
+      run.operations += output.operations;
     }
   }
 }
@@ -75,13 +76,16 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
         .objects = config.objects,
         .iterations = config.iterations,
         .scheduler = config.scheduler,
+        .layout = config.layout,
+        .memory_pattern = config.memory_pattern,
+        .working_set_bytes = config.working_set_bytes,
     };
 
     execute_iterations(workload, workload_config, config.warmup_iterations, false, run_result);
     run_result.checksum = 0;
+    run_result.operations = 0;
     execute_iterations(workload, workload_config, config.repetitions, true, run_result);
     run_result.statistics = calculate_statistics(run_result.samples_ms);
-    run_result.operations = config.objects * config.iterations * config.repetitions;
     result.valid = result.valid && run_result.valid;
     result.runs.push_back(std::move(run_result));
   }

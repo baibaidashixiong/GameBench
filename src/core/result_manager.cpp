@@ -69,8 +69,13 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
   write_escaped_json(output, to_string(result.config.mode));
   output << ",\n    \"scheduler\": ";
   write_escaped_json(output, to_string(result.config.scheduler));
+  output << ",\n    \"layout\": ";
+  write_escaped_json(output, to_string(result.config.layout));
+  output << ",\n    \"memory_pattern\": ";
+  write_escaped_json(output, to_string(result.config.memory_pattern));
   output << ",\n    \"seed\": " << result.config.seed
          << ",\n    \"objects\": " << result.config.objects
+         << ",\n    \"working_set_bytes\": " << result.config.working_set_bytes
          << ",\n    \"iterations\": " << result.config.iterations
          << ",\n    \"warmup_iterations\": " << result.config.warmup_iterations
          << ",\n    \"repetitions\": " << result.config.repetitions << "\n  },\n"

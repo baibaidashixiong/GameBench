@@ -1,6 +1,8 @@
 #include "benchmark/registry.hpp"
 
+#include "benchmark/ecs_workload.hpp"
 #include "benchmark/integer_workload.hpp"
+#include "benchmark/memory_workload.hpp"
 #include "benchmark/scheduler_workload.hpp"
 
 #include <stdexcept>
@@ -51,6 +53,10 @@ auto WorkloadRegistry::create_default() -> WorkloadRegistry {
                [] { return std::make_unique<IntegerWorkload>(); });
   registry.add({"scheduler", "1", "synthetic", "三种调度模式的任务图负载"},
                [] { return std::make_unique<SchedulerWorkload>(); });
+  registry.add({"ecs", "1", "synthetic", "AoS、SoA 与 AoSoA 实体组件负载"},
+               [] { return std::make_unique<EcsWorkload>(); });
+  registry.add({"memory", "1", "synthetic", "顺序、随机与指针追逐内存负载"},
+               [] { return std::make_unique<MemoryWorkload>(); });
   return registry;
 }
 

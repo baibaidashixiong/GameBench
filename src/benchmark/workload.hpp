@@ -18,6 +18,9 @@ struct WorkloadConfig {
   std::uint64_t objects{};
   std::uint64_t iterations{};
   core::SchedulerKind scheduler{core::SchedulerKind::WorkStealing};
+  core::DataLayout layout{core::DataLayout::SoA};
+  core::MemoryPattern memory_pattern{core::MemoryPattern::Sequential};
+  std::uint64_t working_set_bytes{};
 };
 
 struct SchedulingMetrics {

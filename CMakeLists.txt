@@ -29,7 +29,9 @@ target_compile_options(
 find_package(Threads REQUIRED)
 
 add_library(gamebench_core STATIC
+  src/benchmark/ecs_workload.cpp
   src/benchmark/integer_workload.cpp
+  src/benchmark/memory_workload.cpp
   src/benchmark/registry.cpp
   src/benchmark/scheduler_workload.cpp
   src/core/cli.cpp
@@ -41,6 +43,8 @@ add_library(gamebench_core STATIC
   src/core/timing.cpp
   src/platform/system_info.cpp
   src/runtime/job_system.cpp
+  src/runtime/memory_system.cpp
+  src/simulation/ecs.cpp
 )
 target_include_directories(gamebench_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(gamebench_core PUBLIC Threads::Threads gamebench_warnings)
@@ -54,6 +58,8 @@ if(GAMEBENCH_BUILD_TESTS)
 
   add_executable(gamebench_tests
     tests/cli_test.cpp
+    tests/ecs_test.cpp
+    tests/memory_system_test.cpp
     tests/smoke_test.cpp
     tests/timing_test.cpp
     tests/runner_test.cpp
