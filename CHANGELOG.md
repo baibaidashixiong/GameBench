@@ -31,4 +31,8 @@
 - 实现可恢复的 CPU Affinity 配置，主线程与 Worker 可绑定到指定逻辑 CPU 集合。
 - 实现可选 `perf_event_open` cycles、instructions、IPC、branch/cache miss 和 context switch 采集。
 - 增加关键路径、主线程 CPU 时间、Worker 忙碌时间和主线程迁移统计。
+- 增加独立 Engine Adapter 接口与 Godot 安装探测，明确 UE5/O3DE 未实现状态。
+- 增加单工作负载吞吐与线程扩展评分，不跨操作单位生成虚假综合分。
+- 增加离线 HTML 结果查看器、CSV 导出和多结果比较视图。
+- 增加安装规则、CPack TGZ、Release 脚本和 GitHub Actions 构建矩阵。
 

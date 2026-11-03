@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GameBench 结果查看器</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f7f7f4;
+      --surface: #ffffff;
+      --ink: #1c1d20;
+      --muted: #62666d;
+      --rule: #d9d9d2;
+      --accent: #0f766e;
+      --accent-soft: #d9f0ec;
+      --warning: #a16207;
+      --danger: #b42318;
+      --ok: #18794e;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111315;
+        --surface: #181b1e;
+        --ink: #eef0f2;
+        --muted: #a4aab2;
+        --rule: #30353a;
+        --accent: #55c7ba;
+        --accent-soft: #173b38;
+        --warning: #e5b04c;
+        --danger: #ff8b82;
+        --ok: #63d59a;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--bg); color: var(--ink); }
+    body { margin: 0; font: 14px/1.45 var(--sans); }
+    button, select, input { font: inherit; }
+    .shell { width: min(1500px, 100%); margin: 0 auto; }
+    header {
+      display: flex; flex-wrap: wrap; gap: 18px; align-items: end;
+      padding: 18px 22px; border-bottom: 1px solid var(--rule);
+    }
+    .title { margin-right: auto; }
+    h1 { margin: 0; font-size: 1.35rem; letter-spacing: 0; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    button, .file-button {
+      border: 1px solid var(--rule); background: var(--surface); color: var(--ink);
+      min-height: 34px; padding: 6px 11px; border-radius: 4px; cursor: pointer;
+    }
+    button:hover, .file-button:hover { border-color: var(--accent); }
+    button:focus-visible, .file-button:focus-within, select:focus-visible {
+      outline: 2px solid var(--accent); outline-offset: 2px;
+    }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    input[type=file] { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; }
+    .status { padding: 10px 22px; border-bottom: 1px solid var(--rule); color: var(--muted); }
+    .status[data-kind=error] { color: var(--danger); }
+    section { padding: 18px 22px; border-bottom: 1px solid var(--rule); }
+    section h2 { margin: 0 0 12px; font-size: .92rem; text-transform: uppercase; letter-spacing: .06em; }
+    .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 24px; }
+    .meta-item { border-left: 2px solid var(--rule); padding-left: 10px; }
+    .meta-item dt { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
+    .meta-item dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+    .chart-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .chart-head h2 { margin: 0 auto 0 0; }
+    select { border: 1px solid var(--rule); background: var(--surface); color: var(--ink); padding: 6px 8px; border-radius: 4px; max-width: 100%; }
+    .chart-wrap { position: relative; min-height: 260px; }
+    canvas { display: block; width: 100%; height: 280px; background: var(--surface); border: 1px solid var(--rule); }
+    .table-wrap { overflow: auto; border: 1px solid var(--rule); }
+    table { width: 100%; border-collapse: collapse; min-width: 1040px; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid var(--rule); text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child, th:nth-child(2), td:nth-child(2), th:nth-child(3), td:nth-child(3) { text-align: left; }
+    th { position: sticky; top: 0; background: var(--surface); color: var(--muted); font-weight: 600; }
+    tbody tr:hover { background: var(--accent-soft); }
+    .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+    .status-pill { display: inline-block; font-size: .76rem; padding: 2px 6px; border: 1px solid currentColor; border-radius: 3px; }
+    .passed { color: var(--ok); } .failed { color: var(--danger); } .skipped { color: var(--warning); }
+    .empty { color: var(--muted); padding: 24px; text-align: center; }
+    @media (max-width: 700px) {
+      header { align-items: start; padding: 14px; }
+      .title { flex-basis: 100%; }
+      .actions { width: 100%; }
+      .actions > * { flex: 1 1 auto; text-align: center; }
+      section, .status { padding-left: 14px; padding-right: 14px; }
+      canvas { height: 230px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="title">
+        <h1>GameBench 结果查看器</h1>
+      </div>
+      <div class="actions">
+        <label class="file-button">载入 JSON<input id="file-input" type="file" accept=".json,application/json" multiple></label>
+        <button id="export-csv" disabled>导出 CSV</button>
+        <button id="copy-json" disabled>复制 JSON</button>
+        <button id="clear" disabled>清空</button>
+      </div>
+    </header>
+    <div id="status" class="status" role="status" aria-live="polite">无数据</div>
+
+    <section aria-labelledby="hardware-title">
+      <h2 id="hardware-title">硬件与环境</h2>
+      <dl id="hardware" class="meta-grid"><div class="empty">无数据</div></dl>
+    </section>
+
+    <section aria-labelledby="chart-title">
+      <div class="chart-head">
+        <h2 id="chart-title">线程扩展</h2>
+        <label for="result-select">结果</label>
+        <select id="result-select" disabled></select>
+      </div>
+      <div class="chart-wrap"><canvas id="scaling-chart" aria-label="线程数与中位帧时间图表"></canvas></div>
+    </section>
+
+    <section aria-labelledby="table-title">
+      <h2 id="table-title">测量结果</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>文件</th><th>工作负载</th><th>后端</th><th>线程</th>
+              <th>中位 ms</th><th>P99 ms</th><th>吞吐 ops/s</th>
+              <th>扩展指数</th><th>主线程 ms</th><th>迁移</th><th>状态</th>
+            </tr>
+          </thead>
+          <tbody id="result-body"><tr><td colspan="11" class="empty">无数据</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  <script>
+    const state = { documents: [], rows: [] };
+    const fileInput = document.querySelector('#file-input');
+    const statusEl = document.querySelector('#status');
+    const hardwareEl = document.querySelector('#hardware');
+    const resultBody = document.querySelector('#result-body');
+    const resultSelect = document.querySelector('#result-select');
+    const chart = document.querySelector('#scaling-chart');
+    const exportCsv = document.querySelector('#export-csv');
+    const copyJson = document.querySelector('#copy-json');
+    const clearButton = document.querySelector('#clear');
+
+    function setStatus(message, kind = 'info') {
+      statusEl.textContent = message;
+      statusEl.dataset.kind = kind;
+    }
+
+    function number(value, digits = 3) {
+      return Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : '—';
+    }
+
+    function text(value, fallback = 'Unknown') {
+      return value === undefined || value === null || value === '' ? fallback : String(value);
+    }
+
+    function normalizeDocument(raw, fileName) {
+      if (!raw || raw.schema_version !== 1 || !Array.isArray(raw.timing_results)) {
+        throw new Error(`${fileName}: 不是受支持的 GameBench schema_version=1 结果`);
+      }
+      raw._fileName = fileName;
+      return raw;
+    }
+
+    function flattenRows() {
+      state.rows = [];
+      for (const doc of state.documents) {
+        const scores = new Map((doc.scoring?.points || []).map(p => [Number(p.thread_count), p]));
+        const scaling = new Map((doc.thread_scaling || []).map(p => [Number(p.thread_count), p]));
+        for (const run of doc.timing_results) {
+          const threadCount = Number(run.thread_count);
+          const score = scores.get(threadCount);
+          const scale = scaling.get(threadCount);
+          state.rows.push({
+            file: doc._fileName,
+            workload: text(doc.benchmark_id),
+            backend: text(doc.backend),
+            threads: threadCount,
+            median: Number(run.median_frame_time_ms),
+            p99: Number(run.p99_frame_time_ms),
+            throughput: Number(score?.throughput_operations_per_second || 0),
+            scalingScore: Number(score?.thread_scaling_score || 0),
+            mainThread: Number(run.main_thread_time_ms || 0),
+            migrations: Number(run.main_thread_cpu_migrations || 0),
+            status: text(run.validation_status || doc.validation_status, 'unknown'),
+            source: run,
+          });
+        }
+      }
+      state.rows.sort((a, b) => a.workload.localeCompare(b.workload) || a.file.localeCompare(b.file) || a.threads - b.threads);
+    }
+
+    function renderHardware() {
+      hardwareEl.replaceChildren();
+      if (state.documents.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = '无数据';
+        hardwareEl.append(empty);
+        return;
+      }
+      const doc = state.documents[0];
+      const hardware = doc.hardware || {};
+      const environment = doc.environment || {};
+      const configuration = doc.configuration || {};
+      const entries = [
+        ['CPU', hardware.cpu_model],
+        ['逻辑处理器 / 物理核心', `${text(hardware.logical_processors, '—')} / ${text(hardware.physical_cores, '—')}`],
+        ['SMT / NUMA', `${hardware.smt_enabled ? '启用' : '未启用或 Unknown'} / ${text(hardware.numa_nodes, '—')}`],
+        ['内核', environment.kernel_release],
+        ['编译器', `${text(environment.compiler)} ${text(environment.compiler_version, '')}`],
+        ['构建类型', environment.build_type],
+        ['Governor', environment.cpu_governor],
+        ['Affinity', Array.isArray(configuration.cpu_affinity) && configuration.cpu_affinity.length ? configuration.cpu_affinity.join(',') : '未指定'],
+        ['CCD / Core 类型', `${text(hardware.ccd_type)} / ${text(hardware.core_type)}`],
+      ];
+      for (const [label, value] of entries) {
+        const item = document.createElement('div');
+        item.className = 'meta-item';
+        const dt = document.createElement('dt');
+        const dd = document.createElement('dd');
+        dt.textContent = label;
+        dd.textContent = value || 'Unknown';
+        item.append(dt, dd);
+        hardwareEl.append(item);
+      }
+    }
+
+    function statusCell(status) {
+      const span = document.createElement('span');
+      span.className = `status-pill ${status === 'passed' ? 'passed' : status === 'skipped' ? 'skipped' : 'failed'}`;
+      span.textContent = status;
+      return span;
+    }
+
+    function renderTable() {
+      resultBody.replaceChildren();
+      if (state.rows.length === 0) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 11;
+        cell.className = 'empty';
+        cell.textContent = '无数据';
+        row.append(cell);
+        resultBody.append(row);
+        return;
+      }
+      for (const row of state.rows) {
+        const tr = document.createElement('tr');
+        const values = [row.file, row.workload, row.backend, row.threads, number(row.median), number(row.p99),
+          number(row.throughput, 0), number(row.scalingScore, 1), number(row.mainThread), row.migrations];
+        for (const value of values) {
+          const td = document.createElement('td');
+          td.textContent = value;
+          if (typeof value === 'number' || /^\d/.test(String(value))) td.className = 'num';
+          tr.append(td);
+        }
+        const statusTd = document.createElement('td');
+        statusTd.append(statusCell(row.status));
+        tr.append(statusTd);
+        resultBody.append(tr);
+      }
+    }
+
+    function renderSelect() {
+      resultSelect.replaceChildren();
+      state.documents.forEach((doc, index) => {
+        const option = document.createElement('option');
+        option.value = String(index);
+        option.textContent = `${doc._fileName} · ${text(doc.benchmark_id)}`;
+        resultSelect.append(option);
+      });
+      resultSelect.disabled = state.documents.length === 0;
+    }
+
+    function drawChart() {
+      const context = chart.getContext('2d');
+      const rect = chart.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      chart.width = Math.max(1, Math.floor(rect.width * dpr));
+      chart.height = Math.max(1, Math.floor(rect.height * dpr));
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+      context.clearRect(0, 0, rect.width, rect.height);
+      const index = Number(resultSelect.value || 0);
+      const doc = state.documents[index];
+      if (!doc) return;
+      const runs = [...doc.timing_results].sort((a, b) => a.thread_count - b.thread_count);
+      if (runs.length === 0) return;
+      const styles = getComputedStyle(document.documentElement);
+      const ink = styles.getPropertyValue('--ink').trim();
+      const muted = styles.getPropertyValue('--muted').trim();
+      const rule = styles.getPropertyValue('--rule').trim();
+      const accent = styles.getPropertyValue('--accent').trim();
+      const pad = { left: 54, right: 24, top: 24, bottom: 42 };
+      const width = rect.width - pad.left - pad.right;
+      const height = rect.height - pad.top - pad.bottom;
+      const values = runs.map(run => Number(run.median_frame_time_ms));
+      const maxValue = Math.max(...values, 1) * 1.15;
+      context.font = '12px ' + styles.getPropertyValue('--sans');
+      context.strokeStyle = rule;
+      context.fillStyle = muted;
+      context.lineWidth = 1;
+      for (let step = 0; step <= 4; step++) {
+        const y = pad.top + height * step / 4;
+        context.beginPath(); context.moveTo(pad.left, y); context.lineTo(pad.left + width, y); context.stroke();
+        context.fillText(number(maxValue * (4 - step) / 4, 2), 6, y + 4);
+      }
+      const points = runs.map((run, i) => ({
+        x: runs.length === 1 ? pad.left + width / 2 : pad.left + width * i / (runs.length - 1),
+        y: pad.top + height * (1 - Number(run.median_frame_time_ms) / maxValue),
+        label: `${run.thread_count}T`,
+      }));
+      context.strokeStyle = accent;
+      context.lineWidth = 2;
+      context.beginPath();
+      points.forEach((point, i) => i === 0 ? context.moveTo(point.x, point.y) : context.lineTo(point.x, point.y));
+      context.stroke();
+      context.fillStyle = accent;
+      for (const point of points) {
+        context.beginPath(); context.arc(point.x, point.y, 4, 0, Math.PI * 2); context.fill();
+        context.fillStyle = ink; context.textAlign = 'center';
+        context.fillText(point.label, point.x, pad.top + height + 22);
+        context.fillStyle = accent;
+      }
+      context.textAlign = 'left';
+      context.fillStyle = muted;
+      context.fillText('中位帧时间 (ms)', pad.left, 14);
+    }
+
+    function render() {
+      flattenRows();
+      renderHardware();
+      renderTable();
+      renderSelect();
+      const enabled = state.documents.length > 0;
+      exportCsv.disabled = !enabled;
+      copyJson.disabled = !enabled;
+      clearButton.disabled = !enabled;
+      drawChart();
+    }
+
+    async function loadFiles(files) {
+      const loaded = [];
+      for (const file of files) {
+        try {
+          loaded.push(normalizeDocument(JSON.parse(await file.text()), file.name));
+        } catch (error) {
+          setStatus(error.message, 'error');
+          return;
+        }
+      }
+      state.documents = loaded;
+      setStatus(`已载入 ${loaded.length} 份结果，共 ${loaded.reduce((sum, doc) => sum + doc.timing_results.length, 0)} 条线程样本。`);
+      render();
+    }
+
+    function download(content, name, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = name;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    }
+
+    fileInput.addEventListener('change', event => loadFiles(event.target.files));
+    resultSelect.addEventListener('change', drawChart);
+    window.addEventListener('resize', drawChart);
+    clearButton.addEventListener('click', () => {
+      state.documents = [];
+      state.rows = [];
+      fileInput.value = '';
+      setStatus('无数据');
+      render();
+    });
+    exportCsv.addEventListener('click', () => {
+      const header = ['file','workload','backend','threads','median_ms','p99_ms','throughput_ops_s','scaling_score','main_thread_ms','migrations','status'];
+      const lines = [header.join(',')];
+      for (const row of state.rows) {
+        lines.push([row.file, row.workload, row.backend, row.threads, row.median, row.p99,
+          row.throughput, row.scalingScore, row.mainThread, row.migrations, row.status]
+          .map(value => `"${String(value).replaceAll('"', '""')}"`).join(','));
+      }
+      download(lines.join('\n'), 'gamebench-results.csv', 'text/csv;charset=utf-8');
+    });
+    copyJson.addEventListener('click', async () => {
+      const serializable = state.documents.map(doc => {
+        const clone = structuredClone(doc);
+        delete clone._fileName;
+        return { source_file: doc._fileName, result: clone };
+      });
+      await navigator.clipboard.writeText(JSON.stringify(serializable, null, 2));
+      setStatus('已复制当前载入结果 JSON。');
+    });
+    render();
+  </script>
+</body>
+</html>
+

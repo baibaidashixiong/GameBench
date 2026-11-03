@@ -2,6 +2,7 @@
 /build/
 /out/
 /results/
+/dist/
 /Testing/
 /compile_commands.json
 *.gcda

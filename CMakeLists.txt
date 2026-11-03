@@ -43,12 +43,14 @@ add_library(gamebench_core STATIC
   src/benchmark/animation_workload.cpp
   src/benchmark/audio_workload.cpp
   src/benchmark/ecs_workload.cpp
+  src/benchmark/engine_adapter.cpp
   src/benchmark/integer_workload.cpp
   src/benchmark/memory_workload.cpp
   src/benchmark/physics_workload.cpp
   src/benchmark/registry.cpp
   src/benchmark/scheduler_workload.cpp
   src/benchmark/scene_workload.cpp
+  src/benchmark/scoring.cpp
   src/benchmark/vulkan_workload.cpp
   src/core/cli.cpp
   src/core/config.cpp
@@ -103,6 +105,7 @@ if(GAMEBENCH_BUILD_TESTS)
     tests/cpu_topology_test.cpp
     tests/cli_test.cpp
     tests/ecs_test.cpp
+    tests/engine_adapter_test.cpp
     tests/memory_system_test.cpp
     tests/profiler_test.cpp
     tests/physics_test.cpp
@@ -110,6 +113,7 @@ if(GAMEBENCH_BUILD_TESTS)
     tests/timing_test.cpp
     tests/runner_test.cpp
     tests/scene_test.cpp
+    tests/scoring_test.cpp
     tests/job_system_test.cpp
     tests/workload_test.cpp
     tests/vulkan_test.cpp
@@ -121,4 +125,18 @@ if(GAMEBENCH_BUILD_TESTS)
 endif()
 
 install(TARGETS gamebench RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(FILES README.md LICENSE CONTRIBUTING.md CHANGELOG.md
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/doc/gamebench")
+install(DIRECTORY docs/ DESTINATION "${CMAKE_INSTALL_DATADIR}/doc/gamebench/docs")
+install(FILES config/gamebench.toml DESTINATION "${CMAKE_INSTALL_DATADIR}/gamebench/config")
+install(FILES tools/result_viewer/index.html tools/result_viewer/README.md
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/gamebench/result_viewer")
+
+set(CPACK_PACKAGE_NAME "GameBench")
+set(CPACK_PACKAGE_VENDOR "GameBench Contributors")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "面向 Linux 的游戏引擎 CPU 性能测试平台")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_GENERATOR "TGZ")
+include(CPack)
 

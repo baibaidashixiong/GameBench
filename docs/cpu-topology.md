@@ -15,4 +15,5 @@ Affinity 配置以 Linux 逻辑 CPU 集合为准。用户可指定 CPU 列表、
 - 无 hwloc 的构建使用 sysfs `topology`、`node` 与 `cache` 信息作为基础降级。
 - CCD、P/E Core 类型没有可迁移的统一 Linux 接口，因此当前固定报告 `Unknown`。
 - 频率、温度、Governor 仅作为环境诊断，不参与评分乘数。
+- 当前 `perf_event_open` 会话采集调用线程，结果字段明确标注 `scope: main-thread`；Worker 硬件计数需要后续逐线程会话支持。
 

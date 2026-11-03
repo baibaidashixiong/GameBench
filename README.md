@@ -35,6 +35,7 @@ ctest --preset release
 
 ```bash
 gamebench system-info
+gamebench engine-info
 gamebench list
 gamebench run --workload integer --threads 1,2,4 --output result.json
 gamebench run --workload scheduler --scheduler work-stealing --threads 1,2,4,8
@@ -54,11 +55,25 @@ gamebench compare result-a.json result-b.json
 
 当前注册了 `integer`、`scheduler`、`ecs`、`memory`、`scene`、`vulkan`、`physics`、`animation`、`ai` 和 `audio` 工作负载。Vulkan 不可用时对应结果会标记为 `skipped`。Physics 当前使用原生轻量后端；当前环境未安装 Jolt Physics，因此 Jolt 后端尚未启用。后续工作负载只有在实现并通过校验后才会出现在 `gamebench list` 中。具体参数以 `gamebench --help` 的输出为准。
 
+`engine-info` 显示真实引擎适配器状态。当前版本提供 Engine Adapter 契约和 Godot 安装探测，尚未启用引擎执行后端；UE5 与 O3DE 明确标记为未实现。
+
 `system-info` 会报告 hwloc 检测出的逻辑处理器、物理核心、SMT、NUMA、缓存、允许 CPU 列表以及可读取的频率和温度。可用 `--cpu-affinity 0,2`、`--physical-core 0` 或 `--numa-node 0` 选择绑定集合。无法可靠识别的 CCD 或 P/E Core 类型会明确显示 `Unknown`。硬件计数器受 `perf_event_open` 权限限制，不可用时结果保留为 `available: false`。
 
 ## 项目状态
 
 开发顺序和验收状态见 [docs/development-roadmap.md](docs/development-roadmap.md)。测试方法、评分原则和架构约束分别记录在 `docs/` 中。
+
+## 结果查看器
+
+直接用浏览器打开 `tools/result_viewer/index.html`，载入一份或多份 GameBench JSON。查看器完全离线，支持线程扩展图、硬件与配置摘要、CSV 导出和 JSON 复制。
+
+## 发布构建
+
+```bash
+./scripts/build-release.sh
+```
+
+脚本会运行 Release 测试、生成 `.build/package-root` 安装目录和 `.build/packages` 下的 TGZ。发布检查项见 `docs/release.md`。
 
 ## 许可证
 

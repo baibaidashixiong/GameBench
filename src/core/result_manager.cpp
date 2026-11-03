@@ -1,5 +1,7 @@
 #include "core/result_manager.hpp"
 
+#include "benchmark/scoring.hpp"
+
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
@@ -160,8 +162,9 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
            << ",\n    \"ipc\": " << counters.ipc
            << ",\n    \"branch_misses\": " << counters.branch_misses
            << ",\n    \"cache_misses\": " << counters.cache_misses
-           << ",\n    \"context_switches\": " << counters.context_switches
-           << ",\n    \"message\": ";
+           << ",\n    \"context_switches\": " << counters.context_switches << ",\n    \"scope\": ";
+    write_escaped_json(output, counters.scope);
+    output << ",\n    \"message\": ";
     write_escaped_json(output, counters.message);
     output << "\n  }";
   }
@@ -228,7 +231,21 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
            << ",\n      \"speedup\": " << scaling.speedup
            << ",\n      \"efficiency\": " << scaling.efficiency << "\n    }";
   }
-  output << "\n  ]\n}\n";
+  output << "\n  ],\n  \"scoring\": {\n    \"scoring_version\": 1,\n"
+            "    \"comparable_across_workloads\": false,\n    \"note\": ";
+  const auto scores = benchmark::calculate_scores(result);
+  write_escaped_json(output, scores.note);
+  output << ",\n    \"points\": [";
+  for (std::size_t index = 0; index < scores.points.size(); ++index) {
+    if (index != 0) {
+      output << ", ";
+    }
+    const auto& point = scores.points[index];
+    output << "{\"thread_count\": " << point.thread_count
+           << ", \"throughput_operations_per_second\": " << point.throughput_operations_per_second
+           << ", \"thread_scaling_score\": " << point.thread_scaling_score << '}';
+  }
+  output << "]\n  }\n}\n";
 }
 
 void write_csv(const BenchmarkResult& result, std::ostream& output) {

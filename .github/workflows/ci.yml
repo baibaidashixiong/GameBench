@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [debug, release]
+    steps:
+      - uses: actions/checkout@v4
+      - name: 安装依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build g++ libgtest-dev libhwloc-dev libvulkan-dev
+      - name: 配置
+        run: cmake --preset ${{ matrix.preset }}
+      - name: 编译
+        run: cmake --build --preset ${{ matrix.preset }}
+      - name: 测试
+        run: ctest --preset ${{ matrix.preset }} --output-on-failure
+
+  sanitizers:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [asan, ubsan, tsan]
+    steps:
+      - uses: actions/checkout@v4
+      - name: 安装依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build clang libgtest-dev libhwloc-dev libvulkan-dev
+      - name: 配置
+        run: cmake --preset ${{ matrix.preset }}
+      - name: 编译
+        run: cmake --build --preset ${{ matrix.preset }}
+      - name: 测试
+        run: ctest --preset ${{ matrix.preset }} --output-on-failure
+

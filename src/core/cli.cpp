@@ -1,5 +1,6 @@
 #include "core/cli.hpp"
 
+#include "benchmark/engine_adapter.hpp"
 #include "benchmark/registry.hpp"
 #include "core/logger.hpp"
 #include "core/result_manager.hpp"
@@ -70,6 +71,7 @@ void print_help() {
             << "  gamebench run [选项]\n"
             << "  gamebench list\n"
             << "  gamebench system-info\n"
+            << "  gamebench engine-info\n"
             << "  gamebench compare <基准结果.json> <对比结果.json>\n"
             << "  gamebench --version\n\n"
             << "run 选项:\n"
@@ -216,6 +218,25 @@ void print_workloads(const benchmark::WorkloadRegistry& registry) {
   for (const auto& descriptor : registry.descriptors()) {
     std::cout << std::left << std::setw(18) << descriptor.id << std::setw(10) << descriptor.version
               << std::setw(14) << descriptor.category << descriptor.description << '\n';
+  }
+}
+
+void print_engine_adapters() {
+  for (const auto& adapter : benchmark::planned_engine_adapters()) {
+    std::string status;
+    switch (adapter.availability) {
+    case benchmark::EngineAvailability::Available:
+      status = "available";
+      break;
+    case benchmark::EngineAvailability::MissingDependency:
+      status = "missing";
+      break;
+    case benchmark::EngineAvailability::NotImplemented:
+      status = "not-implemented";
+      break;
+    }
+    std::cout << std::left << std::setw(14) << adapter.id << std::setw(18) << adapter.display_name
+              << std::setw(16) << status << adapter.message << '\n';
   }
 }
 
@@ -418,6 +439,10 @@ auto CliApplication::run(std::span<const std::string_view> arguments) const -> i
     }
     if (command == "system-info") {
       print_system_info();
+      return EXIT_SUCCESS;
+    }
+    if (command == "engine-info") {
+      print_engine_adapters();
       return EXIT_SUCCESS;
     }
     if (command == "compare") {

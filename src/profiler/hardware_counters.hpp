@@ -14,6 +14,7 @@ struct HardwareCounterResult {
   std::uint64_t cache_misses{};
   std::uint64_t context_switches{};
   double ipc{};
+  std::string scope{"main-thread"};
   std::string message;
 };
 
