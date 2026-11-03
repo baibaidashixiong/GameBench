@@ -79,6 +79,7 @@ void print_help() {
             << "run 选项:\n"
             << "  --workload <id>          工作负载 ID\n"
             << "  --profile <id>           选择单帧合成负载 Profile\n"
+            << "                           默认: source2-like + 自动线程梯度\n"
             << "  --suite all              运行全部已实现工作负载\n"
             << "  --threads <1,2,4>        线程数量列表\n"
             << "  --mode <reproducible|realistic>\n"
@@ -299,7 +300,19 @@ auto compare_results(const std::filesystem::path& baseline_path,
 }
 
 auto run_command(std::span<const std::string_view> arguments) -> int {
-  const auto config = parse_run_config(arguments);
+  auto config = parse_run_config(arguments);
+  if (config.thread_counts.empty()) {
+    const auto physical_cores = platform::detect_cpu_topology().physical_cores;
+    config.thread_counts.push_back(1);
+    for (const auto candidate : {2U, 4U, 8U, 16U}) {
+      if (candidate <= physical_cores && candidate != config.thread_counts.back()) {
+        config.thread_counts.push_back(candidate);
+      }
+    }
+    if (physical_cores > config.thread_counts.back()) {
+      config.thread_counts.push_back(physical_cores);
+    }
+  }
   const auto registry = benchmark::WorkloadRegistry::create_default();
 
   std::vector<std::string> workload_ids;

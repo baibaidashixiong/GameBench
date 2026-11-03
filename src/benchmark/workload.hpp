@@ -61,6 +61,7 @@ struct WorkloadOutput {
   std::optional<SchedulingMetrics> scheduling;
   std::optional<VulkanDiagnostics> vulkan;
   std::optional<double> measured_time_ms;
+  std::optional<double> simulated_load_percent;
 };
 
 class Workload {

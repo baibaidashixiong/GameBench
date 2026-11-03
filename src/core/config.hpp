@@ -16,10 +16,10 @@ enum class MemoryPattern { Sequential, Random, PointerChasing, Strided };
 enum class VulkanMode { NoSubmit, GpuBacked };
 
 struct RunConfig {
-  std::string workload{"integer"};
+  std::string workload{"game-frame"};
   std::string profile{"source2-like"};
   bool suite_all{false};
-  std::vector<unsigned> thread_counts{1};
+  std::vector<unsigned> thread_counts;
   RunMode mode{RunMode::Reproducible};
   SchedulerKind scheduler{SchedulerKind::WorkStealing};
   DataLayout layout{DataLayout::SoA};
@@ -32,8 +32,8 @@ struct RunConfig {
   std::uint64_t seed{1337};
   std::uint64_t objects{65536};
   std::uint64_t iterations{1};
-  std::uint64_t warmup_iterations{3};
-  std::uint64_t repetitions{10};
+  std::uint64_t warmup_iterations{30};
+  std::uint64_t repetitions{100};
   std::uint64_t working_set_bytes{16ULL * 1024ULL * 1024ULL};
   ExportFormat format{ExportFormat::Json};
   std::filesystem::path output_path;

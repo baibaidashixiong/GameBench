@@ -65,3 +65,12 @@ TEST(CliTest, ProfileSelectsGameFrameWorkload) {
   EXPECT_EQ(config.profile, "source2-like");
   EXPECT_EQ(config.workload, "game-frame");
 }
+
+TEST(CliTest, UsesSource2LikeDefaults) {
+  const auto config = gamebench::core::parse_run_config({});
+  EXPECT_EQ(config.workload, "game-frame");
+  EXPECT_EQ(config.profile, "source2-like");
+  EXPECT_TRUE(config.thread_counts.empty());
+  EXPECT_EQ(config.warmup_iterations, 30U);
+  EXPECT_EQ(config.repetitions, 100U);
+}

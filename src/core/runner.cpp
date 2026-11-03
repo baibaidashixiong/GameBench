@@ -49,6 +49,18 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
     if (measure) {
       run.samples_ms.push_back(output.measured_time_ms.value_or(milliseconds_since(start, end)));
       run.main_thread_cpu_ms.push_back(cpu_end - cpu_start);
+      if (output.simulated_load_percent) {
+        const auto load = *output.simulated_load_percent;
+        if (run.simulated_load_samples == 0) {
+          run.minimum_simulated_load_percent = load;
+          run.maximum_simulated_load_percent = load;
+        } else {
+          run.minimum_simulated_load_percent = std::min(run.minimum_simulated_load_percent, load);
+          run.maximum_simulated_load_percent = std::max(run.maximum_simulated_load_percent, load);
+        }
+        ++run.simulated_load_samples;
+        run.simulated_load_sum += load;
+      }
       if (cpu_before >= 0 && cpu_after >= 0 && cpu_before != cpu_after) {
         ++run.main_thread_cpu_migrations;
       }
@@ -124,6 +136,10 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
     run_result.operations = 0;
     execute_iterations(workload, workload_config, config.repetitions, true, run_result);
     run_result.statistics = calculate_statistics(run_result.samples_ms);
+    if (run_result.simulated_load_samples > 0) {
+      run_result.mean_simulated_load_percent =
+          run_result.simulated_load_sum / static_cast<double>(run_result.simulated_load_samples);
+    }
     run_result.main_thread_time_ms = calculate_statistics(run_result.main_thread_cpu_ms).median_ms;
     run_result.critical_path_time_ms = run_result.statistics.median_ms;
     if (run_result.scheduling) {

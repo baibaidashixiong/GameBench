@@ -4,8 +4,13 @@ namespace gamebench::benchmark {
 
 auto make_source2_like_profile() -> FrameProfile {
   return {.id = "source2-like",
-          .version = "1",
+          .version = "2",
           .description = "Source 2 风格的单帧 Synthetic CPU 负载，不代表真实 CS2 成绩",
+          .load_variation_version = 1,
+          .minimum_load_percent = 45,
+          .maximum_load_percent = 90,
+          .burst_chance_per_mille = 80,
+          .burst_load_percent = 100,
           .ecs_entities = 50000,
           .scene_objects = 30000,
           .scene_views = 8,

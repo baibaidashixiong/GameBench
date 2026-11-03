@@ -50,6 +50,7 @@ gamebench run --workload ai --threads 1,2,4,8
 gamebench run --workload audio --buffer-size 1024 --sample-rate 48000
 gamebench run --workload scheduler --threads 2 --cpu-affinity 0,1 --hardware-counters
 gamebench profile list
+gamebench run
 gamebench run --profile source2-like --threads 1,2,4,8,16
 gamebench run --workload integer --format csv --output result.csv
 gamebench compare result-a.json result-b.json
@@ -60,6 +61,8 @@ gamebench compare result-a.json result-b.json
 `engine-info` 显示真实引擎适配器状态。当前版本提供 Engine Adapter 契约、Godot 安装探测以及 Source 2 显式工具链探测，尚未启用引擎执行后端；UE5 与 O3DE 明确标记为未实现。Source 2 可使用 `SOURCE2_BIN=/path/to/tool` 或 `SOURCE2_ROOT=/path/to/root` 指定本地工具链。
 
 `source2-like` Profile 不启动真实 Source 2，而是把 ECS、Scene、Physics、Animation、AI、Audio 和 Vulkan 录制组合成一条带依赖的 Synthetic 游戏帧。具体规模和限制见 `docs/source2-like-profile.md`。
+
+直接执行 `gamebench run` 会使用 `source2-like` Profile、自动物理核心线程梯度、30 帧预热和 100 帧采样。Profile v2 使用固定种子产生 45% 到 100% 的帧负载波动，用于覆盖轻载、常规和突发场景。
 
 `system-info` 会报告 hwloc 检测出的逻辑处理器、物理核心、SMT、NUMA、缓存、允许 CPU 列表以及可读取的频率和温度。可用 `--cpu-affinity 0,2`、`--physical-core 0` 或 `--numa-node 0` 选择绑定集合。无法可靠识别的 CCD 或 P/E Core 类型会明确显示 `Unknown`。硬件计数器受 `perf_event_open` 权限限制，不可用时结果保留为 `available: false`。
 

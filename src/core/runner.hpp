@@ -25,6 +25,11 @@ struct BenchmarkRun {
   std::optional<double> worker_thread_time_ms;
   std::optional<double> total_cpu_work_ms;
   std::uint64_t main_thread_cpu_migrations{};
+  double mean_simulated_load_percent{};
+  double minimum_simulated_load_percent{};
+  double maximum_simulated_load_percent{};
+  std::uint64_t simulated_load_samples{};
+  double simulated_load_sum{};
   std::uint64_t operations{};
   std::uint64_t checksum{};
   bool valid{};
