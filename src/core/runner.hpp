@@ -1,5 +1,6 @@
 #pragma once
 
+#include "benchmark/frame_profile.hpp"
 #include "benchmark/workload.hpp"
 #include "core/config.hpp"
 #include "core/timing.hpp"
@@ -29,6 +30,7 @@ struct BenchmarkRun {
   bool valid{};
   bool skipped{};
   std::string validation_message;
+  std::vector<std::string> warnings;
   std::optional<benchmark::SchedulingMetrics> scheduling;
   std::optional<benchmark::VulkanDiagnostics> vulkan;
 };
@@ -47,6 +49,7 @@ struct BenchmarkResult {
   platform::SystemInfo system;
   platform::CpuTopology topology;
   std::optional<profiler::HardwareCounterResult> hardware_counters;
+  std::optional<benchmark::FrameProfile> frame_profile;
   std::vector<BenchmarkRun> runs;
   std::vector<ThreadScaling> thread_scaling;
   bool valid{};

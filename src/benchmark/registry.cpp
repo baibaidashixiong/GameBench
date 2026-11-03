@@ -3,6 +3,7 @@
 #include "benchmark/ai_workload.hpp"
 #include "benchmark/animation_workload.hpp"
 #include "benchmark/audio_workload.hpp"
+#include "benchmark/composite_frame_workload.hpp"
 #include "benchmark/ecs_workload.hpp"
 #include "benchmark/integer_workload.hpp"
 #include "benchmark/memory_workload.hpp"
@@ -75,6 +76,8 @@ auto WorkloadRegistry::create_default() -> WorkloadRegistry {
                [] { return std::make_unique<AiWorkload>(); });
   registry.add({"audio", "1", "synthetic", "FIR、重采样、Reverb 与 Stereo Mixing"},
                [] { return std::make_unique<AudioWorkload>(); });
+  registry.add({"game-frame", "1", "engine-like", "版本化 Profile 驱动的单帧 Synthetic CPU 负载"},
+               [] { return std::make_unique<CompositeFrameWorkload>(); });
   return registry;
 }
 

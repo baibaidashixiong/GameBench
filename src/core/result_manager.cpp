@@ -81,6 +81,8 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
   output << ",\n  \"validation_status\": \"" << top_status << '"' << ",\n  \"configuration\": {\n"
          << "    \"workload\": ";
   write_escaped_json(output, result.config.workload);
+  output << ",\n    \"profile\": ";
+  write_escaped_json(output, result.config.profile);
   output << ",\n    \"mode\": ";
   write_escaped_json(output, to_string(result.config.mode));
   output << ",\n    \"scheduler\": ";
@@ -100,8 +102,29 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
   output << ",\n    \"hardware_counters\": " << (result.config.hardware_counters ? "true" : "false")
          << ",\n    \"iterations\": " << result.config.iterations
          << ",\n    \"warmup_iterations\": " << result.config.warmup_iterations
-         << ",\n    \"repetitions\": " << result.config.repetitions << "\n  },\n"
-         << "  \"hardware\": {\n    \"cpu_vendor\": ";
+         << ",\n    \"repetitions\": " << result.config.repetitions << "\n  },\n";
+  if (result.frame_profile) {
+    const auto& profile = *result.frame_profile;
+    output << "  \"frame_profile\": {\n    \"id\": ";
+    write_escaped_json(output, profile.id);
+    output << ",\n    \"version\": ";
+    write_escaped_json(output, profile.version);
+    output << ",\n    \"ecs_entities\": " << profile.ecs_entities
+           << ",\n    \"scene_objects\": " << profile.scene_objects
+           << ",\n    \"scene_views\": " << profile.scene_views
+           << ",\n    \"physics_bodies\": " << profile.physics_bodies
+           << ",\n    \"physics_substeps\": " << profile.physics_substeps
+           << ",\n    \"animation_skeletons\": " << profile.animation_skeletons
+           << ",\n    \"bones_per_skeleton\": " << profile.bones_per_skeleton
+           << ",\n    \"ai_agents\": " << profile.ai_agents
+           << ",\n    \"audio_sources\": " << profile.audio_sources
+           << ",\n    \"audio_buffer_size\": " << profile.audio_buffer_size
+           << ",\n    \"sample_rate\": " << profile.sample_rate
+           << ",\n    \"vulkan_tasks\": " << profile.vulkan_tasks
+           << ",\n    \"vulkan_commands_per_task\": " << profile.vulkan_commands_per_task
+           << "\n  },\n";
+  }
+  output << "  \"hardware\": {\n    \"cpu_vendor\": ";
   write_escaped_json(output, result.system.cpu_vendor);
   output << ",\n    \"cpu_model\": ";
   write_escaped_json(output, result.system.cpu_model);
@@ -202,6 +225,10 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
            << (run.skipped ? "\"skipped\"" : (run.valid ? "\"passed\"" : "\"failed\""))
            << ",\n      \"validation_message\": ";
     write_escaped_json(output, run.validation_message);
+    if (!run.warnings.empty()) {
+      output << ",\n      \"warnings\": ";
+      write_json_string_array(output, run.warnings);
+    }
     if (run.scheduling) {
       output << ",\n      \"scheduling\": {\n        \"submitted_jobs\": "
              << run.scheduling->submitted_jobs

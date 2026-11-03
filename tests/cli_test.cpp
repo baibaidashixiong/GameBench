@@ -55,3 +55,13 @@ TEST(CliTest, ParsesAffinityAndHardwareCounters) {
   EXPECT_EQ(config.cpu_affinity[1], 2U);
   EXPECT_TRUE(config.hardware_counters);
 }
+
+TEST(CliTest, ProfileSelectsGameFrameWorkload) {
+  constexpr std::array arguments{
+      std::string_view{"--profile"},
+      std::string_view{"source2-like"},
+  };
+  const auto config = gamebench::core::parse_run_config(arguments);
+  EXPECT_EQ(config.profile, "source2-like");
+  EXPECT_EQ(config.workload, "game-frame");
+}

@@ -28,7 +28,8 @@ private:
   unsigned prepared_threads_{};
   core::SchedulerKind prepared_scheduler_{core::SchedulerKind::WorkStealing};
   std::unique_ptr<runtime::JobSystem> system_;
-  WorkloadOutput previous_statistics_;
+  SchedulingMetrics previous_cumulative_{};
+  bool has_previous_statistics_{};
 };
 
 } // namespace gamebench::benchmark

@@ -13,6 +13,7 @@
 namespace gamebench::benchmark {
 
 struct WorkloadConfig {
+  std::string profile_id{"source2-like"};
   unsigned thread_count{1};
   std::uint64_t seed{};
   std::uint64_t objects{};
@@ -25,6 +26,7 @@ struct WorkloadConfig {
   std::uint32_t audio_buffer_size{1024};
   std::uint32_t sample_rate{48000};
   std::vector<unsigned> cpu_affinity;
+  bool enable_vulkan{true};
 };
 
 [[nodiscard]] inline auto worker_affinity(const WorkloadConfig& config) -> std::vector<unsigned> {
@@ -55,6 +57,7 @@ struct WorkloadOutput {
   bool valid{};
   bool skipped{};
   std::string validation_message;
+  std::vector<std::string> warnings;
   std::optional<SchedulingMetrics> scheduling;
   std::optional<VulkanDiagnostics> vulkan;
   std::optional<double> measured_time_ms;

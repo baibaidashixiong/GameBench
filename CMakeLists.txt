@@ -42,8 +42,10 @@ add_library(gamebench_core STATIC
   src/benchmark/ai_workload.cpp
   src/benchmark/animation_workload.cpp
   src/benchmark/audio_workload.cpp
+  src/benchmark/composite_frame_workload.cpp
   src/benchmark/ecs_workload.cpp
   src/benchmark/engine_adapter.cpp
+  src/benchmark/frame_profile.cpp
   src/benchmark/integer_workload.cpp
   src/benchmark/memory_workload.cpp
   src/benchmark/physics_workload.cpp
@@ -104,8 +106,10 @@ if(GAMEBENCH_BUILD_TESTS)
     tests/audio_test.cpp
     tests/cpu_topology_test.cpp
     tests/cli_test.cpp
+    tests/composite_frame_test.cpp
     tests/ecs_test.cpp
     tests/engine_adapter_test.cpp
+    tests/frame_profile_test.cpp
     tests/memory_system_test.cpp
     tests/profiler_test.cpp
     tests/physics_test.cpp

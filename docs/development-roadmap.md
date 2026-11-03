@@ -22,6 +22,7 @@
 | 7 | CPU Topology、Affinity、Profiling | 已完成 |
 | 8 | 引擎适配器与 Godot、Source 2 集成 | 接口完成，执行桥接待外部引擎 |
 | 9 | 结果查看器与正式发布 | 已完成 |
+| 10 | Source 2-like 单帧 Profile | 已完成 |
 
 ## 里程碑 0：项目基础设施
 

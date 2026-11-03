@@ -49,6 +49,10 @@ hwloc 提供 CPU 拓扑与缓存层次，sysfs 提供 Governor、频率和可选
 
 结果记录 wall-clock 关键路径、主线程 CPU 时间、Job System Worker 忙碌时间和主线程迁移次数。无法可靠分离的 synchronization overhead 不会被估算或伪造，后续只有在增加明确测量点后才会输出。
 
+## Source 2-like 单帧负载
+
+`game-frame` 工作负载读取版本化 `FrameProfile`，为各阶段配置独立规模。Physics 子步通过依赖链建立屏障；Scene 汇总、Audio Mixing、Render Preparation 和 Vulkan 录制按任务依赖执行；最后以单一校验任务等待整个帧完成。该负载用于测试 CPU 调度与现代游戏帧工作组成，不代表真实 Source 2 或 CS2 成绩。
+
 ## 可复现性
 
 每个工作负载接收规范化配置、固定随机种子和显式线程数。运行结果记录硬件、环境、编译类型、Affinity 和版本信息。异常值不会被静默删除。

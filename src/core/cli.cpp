@@ -1,6 +1,7 @@
 #include "core/cli.hpp"
 
 #include "benchmark/engine_adapter.hpp"
+#include "benchmark/frame_profile.hpp"
 #include "benchmark/registry.hpp"
 #include "core/logger.hpp"
 #include "core/result_manager.hpp"
@@ -72,10 +73,12 @@ void print_help() {
             << "  gamebench list\n"
             << "  gamebench system-info\n"
             << "  gamebench engine-info\n"
+            << "  gamebench profile list\n"
             << "  gamebench compare <基准结果.json> <对比结果.json>\n"
             << "  gamebench --version\n\n"
             << "run 选项:\n"
             << "  --workload <id>          工作负载 ID\n"
+            << "  --profile <id>           选择单帧合成负载 Profile\n"
             << "  --suite all              运行全部已实现工作负载\n"
             << "  --threads <1,2,4>        线程数量列表\n"
             << "  --mode <reproducible|realistic>\n"
@@ -243,6 +246,14 @@ void print_engine_adapters() {
   }
 }
 
+void print_frame_profiles() {
+  std::cout << std::left << std::setw(18) << "ID" << std::setw(10) << "版本" << "说明\n";
+  for (const auto& profile : benchmark::available_frame_profiles()) {
+    std::cout << std::left << std::setw(18) << profile.id << std::setw(10) << profile.version
+              << profile.description << '\n';
+  }
+}
+
 void print_result(const BenchmarkResult& result, const std::filesystem::path& output) {
   std::cout << "工作负载: " << result.benchmark_id << '\n';
   for (const auto& run : result.runs) {
@@ -342,6 +353,10 @@ auto parse_run_config(std::span<const std::string_view> arguments) -> RunConfig 
     const auto option = arguments[index];
     if (option == "--workload") {
       config.workload = option_value(arguments, index);
+      config.suite_all = false;
+    } else if (option == "--profile") {
+      config.profile = option_value(arguments, index);
+      config.workload = "game-frame";
       config.suite_all = false;
     } else if (option == "--suite") {
       const auto suite = option_value(arguments, index);
@@ -446,6 +461,10 @@ auto CliApplication::run(std::span<const std::string_view> arguments) const -> i
     }
     if (command == "engine-info") {
       print_engine_adapters();
+      return EXIT_SUCCESS;
+    }
+    if (command == "profile" && rest.size() == 1 && rest.front() == "list") {
+      print_frame_profiles();
       return EXIT_SUCCESS;
     }
     if (command == "compare") {

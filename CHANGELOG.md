@@ -36,4 +36,7 @@
 - 增加离线 HTML 结果查看器、CSV 导出和多结果比较视图。
 - 增加安装规则、CPack TGZ、Release 脚本和 GitHub Actions 构建矩阵。
 - 增加 Source 2 Engine Adapter 探测，支持 `SOURCE2_BIN` 与 `SOURCE2_ROOT`，并明确标记为仅检测到、不可执行。
+- 增加 `source2-like` 版本化 Frame Profile 与 `game-frame` 单帧合成工作负载。
+- 使用依赖任务图组合 ECS、Scene、Physics、Animation、AI、Audio 与 Vulkan No-Submit 录制。
+- 修复连续帧中 Scheduler 和 Game Frame 的统计基线，避免提交数与 Worker 忙碌时间跨帧累计。
 

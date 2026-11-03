@@ -17,6 +17,7 @@ enum class VulkanMode { NoSubmit, GpuBacked };
 
 struct RunConfig {
   std::string workload{"integer"};
+  std::string profile{"source2-like"};
   bool suite_all{false};
   std::vector<unsigned> thread_counts{1};
   RunMode mode{RunMode::Reproducible};

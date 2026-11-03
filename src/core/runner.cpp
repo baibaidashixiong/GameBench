@@ -38,6 +38,9 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
     if (output.vulkan) {
       run.vulkan = output.vulkan;
     }
+    if (!output.warnings.empty()) {
+      run.warnings = output.warnings;
+    }
     if (iteration == 0) {
       run.checksum = output.checksum;
     } else {
@@ -86,6 +89,9 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
   result.benchmark_id = std::string{workload.id()};
   result.benchmark_version = std::string{workload.version()};
   result.config = config;
+  if (workload.id() == "game-frame") {
+    result.frame_profile = benchmark::find_frame_profile(config.profile);
+  }
   result.system = platform::collect_system_info();
   result.topology = platform::detect_cpu_topology();
   result.valid = true;
@@ -98,6 +104,7 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
     run_result.operations = 0;
 
     const benchmark::WorkloadConfig workload_config{
+        .profile_id = config.profile,
         .thread_count = thread_count,
         .seed = config.seed,
         .objects = config.objects,

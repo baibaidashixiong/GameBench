@@ -81,8 +81,7 @@ auto SchedulerWorkload::execute(const WorkloadConfig& config) -> WorkloadOutput 
   system_->wait(merge);
 
   const auto current = system_->statistics();
-  const auto previous_busy =
-      previous_statistics_.scheduling ? previous_statistics_.scheduling->worker_busy_ms : 0.0;
+  const auto previous_busy = has_previous_statistics_ ? previous_cumulative_.worker_busy_ms : 0.0;
   WorkloadOutput output;
   output.checksum = checksum;
   output.operations = config.objects;
@@ -91,24 +90,20 @@ auto SchedulerWorkload::execute(const WorkloadConfig& config) -> WorkloadOutput 
     output.validation_message = "调度工作负载分片数量不匹配";
   }
   output.scheduling = SchedulingMetrics{
-      .submitted_jobs =
-          current.submitted_jobs -
-          (previous_statistics_.scheduling ? previous_statistics_.scheduling->submitted_jobs : 0),
-      .completed_jobs =
-          current.completed_jobs -
-          (previous_statistics_.scheduling ? previous_statistics_.scheduling->completed_jobs : 0),
+      .submitted_jobs = current.submitted_jobs -
+                        (has_previous_statistics_ ? previous_cumulative_.submitted_jobs : 0),
+      .completed_jobs = current.completed_jobs -
+                        (has_previous_statistics_ ? previous_cumulative_.completed_jobs : 0),
       .stolen_jobs =
-          current.stolen_jobs -
-          (previous_statistics_.scheduling ? previous_statistics_.scheduling->stolen_jobs : 0),
-      .main_thread_jobs =
-          current.main_thread_jobs -
-          (previous_statistics_.scheduling ? previous_statistics_.scheduling->main_thread_jobs : 0),
+          current.stolen_jobs - (has_previous_statistics_ ? previous_cumulative_.stolen_jobs : 0),
+      .main_thread_jobs = current.main_thread_jobs -
+                          (has_previous_statistics_ ? previous_cumulative_.main_thread_jobs : 0),
       .exceptions =
-          current.exceptions -
-          (previous_statistics_.scheduling ? previous_statistics_.scheduling->exceptions : 0),
+          current.exceptions - (has_previous_statistics_ ? previous_cumulative_.exceptions : 0),
       .worker_busy_ms = busy_sum(current) - previous_busy,
   };
-  previous_statistics_ = output;
+  previous_cumulative_ = *output.scheduling;
+  has_previous_statistics_ = true;
   return output;
 }
 
@@ -121,7 +116,8 @@ void SchedulerWorkload::ensure_system(const WorkloadConfig& config) {
   system_.reset();
   prepared_threads_ = config.thread_count;
   prepared_scheduler_ = config.scheduler;
-  previous_statistics_ = WorkloadOutput{};
+  previous_cumulative_ = {};
+  has_previous_statistics_ = false;
   const auto worker_count = std::max(1U, config.thread_count - 1U);
   system_ = std::make_unique<runtime::JobSystem>(runtime::JobSystemConfig{
       .worker_count = worker_count,
