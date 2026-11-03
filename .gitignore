@@ -1,0 +1,17 @@
+/.build/
+/build/
+/out/
+/results/
+/Testing/
+/compile_commands.json
+*.gcda
+*.gcno
+*.profraw
+*.profdata
+*.log
+*.tmp
+*.swp
+.cache/
+.idea/
+.vscode/
+

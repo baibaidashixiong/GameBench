@@ -1,0 +1,11 @@
+# GameBench 配置示例（当前阶段仅作为规范草案，CLI 配置优先级更高）
+[run]
+mode = "reproducible"
+seed = 1337
+warmup_iterations = 3
+repetitions = 10
+
+[runtime]
+threads = 1
+scheduler = "work-stealing"
+
