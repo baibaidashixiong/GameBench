@@ -34,6 +34,7 @@ add_library(gamebench_core STATIC
   src/benchmark/memory_workload.cpp
   src/benchmark/registry.cpp
   src/benchmark/scheduler_workload.cpp
+  src/benchmark/scene_workload.cpp
   src/core/cli.cpp
   src/core/config.cpp
   src/core/logger.cpp
@@ -45,6 +46,7 @@ add_library(gamebench_core STATIC
   src/runtime/job_system.cpp
   src/runtime/memory_system.cpp
   src/simulation/ecs.cpp
+  src/simulation/scene.cpp
 )
 target_include_directories(gamebench_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(gamebench_core PUBLIC Threads::Threads gamebench_warnings)
@@ -63,6 +65,7 @@ if(GAMEBENCH_BUILD_TESTS)
     tests/smoke_test.cpp
     tests/timing_test.cpp
     tests/runner_test.cpp
+    tests/scene_test.cpp
     tests/job_system_test.cpp
     tests/workload_test.cpp
   )

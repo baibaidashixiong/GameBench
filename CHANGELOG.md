@@ -17,4 +17,6 @@
 - 实现 AoS、SoA、AoSoA 三种 ECS 组件布局及实体创建、销毁和并行更新。
 - 实现 Arena、Pool、顺序、随机、跨步与 Pointer Chasing 内存工作负载。
 - 增加 ECS 布局和内存访问模式 CLI 配置与结果元数据。
+- 实现场景 AABB、透视 Frustum、BVH、空间查询、可见性过滤、LOD 和 Draw Call 准备。
+- 增加 BVH 与暴力遍历对照验证，并将场景和调度任务图固定为与线程数无关的总工作量。
 

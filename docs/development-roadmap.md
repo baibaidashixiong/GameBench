@@ -16,7 +16,7 @@
 | 1 | Core Runtime、JSON、CLI、基础 Runner | 已完成 |
 | 2 | Job System、依赖、三种调度模式 | 已完成 |
 | 3 | ECS 与 Memory Workload | 已完成 |
-| 4 | Scene Processing | 计划中 |
+| 4 | Scene Processing | 已完成 |
 | 5 | Vulkan Backend | 计划中 |
 | 6 | Physics、Animation、AI、Audio | 计划中 |
 | 7 | CPU Topology、Affinity、Profiling | 计划中 |

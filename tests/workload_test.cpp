@@ -31,7 +31,7 @@ TEST(WorkloadTest, RegistryListsRegisteredWorkloads) {
   const auto registry = gamebench::benchmark::WorkloadRegistry::create_default();
   EXPECT_TRUE(registry.contains("integer"));
   EXPECT_FALSE(registry.contains("missing"));
-  EXPECT_EQ(registry.descriptors().size(), 4U);
+  EXPECT_EQ(registry.descriptors().size(), 5U);
 }
 
 TEST(WorkloadTest, SchedulerWorkloadIsDeterministicAcrossModes) {
@@ -121,4 +121,28 @@ TEST(WorkloadTest, MemoryWorkloadSupportsAllAccessPatterns) {
     EXPECT_TRUE(output.valid);
     EXPECT_GT(output.operations, 0U);
   }
+}
+
+TEST(WorkloadTest, SceneWorkloadKeepsSameWorkAcrossThreadCounts) {
+  auto workload = gamebench::benchmark::WorkloadRegistry::create_default().create("scene");
+  ASSERT_NE(workload, nullptr);
+
+  std::array<std::uint64_t, 2> checksums{};
+  constexpr auto thread_counts = std::array{1U, 4U};
+  for (std::size_t index = 0; index < thread_counts.size(); ++index) {
+    const gamebench::benchmark::WorkloadConfig config{
+        .thread_count = thread_counts[index],
+        .seed = 42,
+        .objects = 8192,
+        .iterations = 1,
+        .scheduler = gamebench::core::SchedulerKind::WorkStealing,
+        .layout = gamebench::core::DataLayout::SoA,
+        .memory_pattern = gamebench::core::MemoryPattern::Sequential,
+        .working_set_bytes = 0,
+    };
+    const auto output = workload->execute(config);
+    EXPECT_TRUE(output.valid);
+    checksums[index] = output.checksum;
+  }
+  EXPECT_EQ(checksums[0], checksums[1]);
 }

@@ -48,7 +48,7 @@ auto SchedulerWorkload::description() const -> std::string_view {
 auto SchedulerWorkload::execute(const WorkloadConfig& config) -> WorkloadOutput {
   ensure_system(config);
 
-  const auto shard_count = std::max<std::uint64_t>(1, config.thread_count * 8ULL);
+  constexpr std::uint64_t shard_count = 64;
   std::vector<std::uint64_t> shard_results(shard_count, 0);
   std::vector<runtime::JobHandle> shards;
   shards.reserve(shard_count);

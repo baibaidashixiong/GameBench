@@ -40,11 +40,12 @@ gamebench run --workload integer --threads 1,2,4 --output result.json
 gamebench run --workload scheduler --scheduler work-stealing --threads 1,2,4,8
 gamebench run --workload ecs --layout soa --threads 1,2,4,8
 gamebench run --workload memory --pattern pointer-chasing --working-set 16777216
+gamebench run --workload scene --threads 1,2,4,8 --objects 50000
 gamebench run --workload integer --format csv --output result.csv
 gamebench compare result-a.json result-b.json
 ```
 
-当前注册了 `integer`、`scheduler`、`ecs` 和 `memory` 工作负载。后续工作负载只有在实现并通过校验后才会出现在 `gamebench list` 中。具体参数以 `gamebench --help` 的输出为准。
+当前注册了 `integer`、`scheduler`、`ecs`、`memory` 和 `scene` 工作负载。后续工作负载只有在实现并通过校验后才会出现在 `gamebench list` 中。具体参数以 `gamebench --help` 的输出为准。
 
 ## 项目状态
 

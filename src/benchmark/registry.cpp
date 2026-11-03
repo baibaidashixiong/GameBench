@@ -3,6 +3,7 @@
 #include "benchmark/ecs_workload.hpp"
 #include "benchmark/integer_workload.hpp"
 #include "benchmark/memory_workload.hpp"
+#include "benchmark/scene_workload.hpp"
 #include "benchmark/scheduler_workload.hpp"
 
 #include <stdexcept>
@@ -57,6 +58,8 @@ auto WorkloadRegistry::create_default() -> WorkloadRegistry {
                [] { return std::make_unique<EcsWorkload>(); });
   registry.add({"memory", "1", "synthetic", "顺序、随机与指针追逐内存负载"},
                [] { return std::make_unique<MemoryWorkload>(); });
+  registry.add({"scene", "1", "synthetic", "BVH 场景查询、剔除与 Draw Call 准备"},
+               [] { return std::make_unique<SceneWorkload>(); });
   return registry;
 }
 
