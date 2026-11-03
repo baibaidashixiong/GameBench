@@ -19,8 +19,10 @@ struct BenchmarkRun {
   std::uint64_t operations{};
   std::uint64_t checksum{};
   bool valid{};
+  bool skipped{};
   std::string validation_message;
   std::optional<benchmark::SchedulingMetrics> scheduling;
+  std::optional<benchmark::VulkanDiagnostics> vulkan;
 };
 
 struct ThreadScaling {

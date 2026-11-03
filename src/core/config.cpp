@@ -60,4 +60,14 @@ auto to_string(MemoryPattern pattern) -> std::string_view {
   return "unknown";
 }
 
+auto to_string(VulkanMode mode) -> std::string_view {
+  switch (mode) {
+  case VulkanMode::NoSubmit:
+    return "no-submit";
+  case VulkanMode::GpuBacked:
+    return "gpu-backed";
+  }
+  return "unknown";
+}
+
 } // namespace gamebench::core

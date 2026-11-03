@@ -27,6 +27,9 @@ target_compile_options(
 )
 
 find_package(Threads REQUIRED)
+if(GAMEBENCH_ENABLE_VULKAN)
+  find_package(Vulkan QUIET)
+endif()
 
 add_library(gamebench_core STATIC
   src/benchmark/ecs_workload.cpp
@@ -35,6 +38,7 @@ add_library(gamebench_core STATIC
   src/benchmark/registry.cpp
   src/benchmark/scheduler_workload.cpp
   src/benchmark/scene_workload.cpp
+  src/benchmark/vulkan_workload.cpp
   src/core/cli.cpp
   src/core/config.cpp
   src/core/logger.cpp
@@ -50,6 +54,15 @@ add_library(gamebench_core STATIC
 )
 target_include_directories(gamebench_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(gamebench_core PUBLIC Threads::Threads gamebench_warnings)
+
+if(Vulkan_FOUND)
+  target_sources(gamebench_core PRIVATE src/renderer/vulkan_context.cpp)
+  target_compile_definitions(gamebench_core PUBLIC GAMEBENCH_HAS_VULKAN=1)
+  target_link_libraries(gamebench_core PUBLIC Vulkan::Vulkan)
+  message(STATUS "Vulkan 已启用: ${Vulkan_VERSION}")
+else()
+  message(STATUS "Vulkan 未找到，vulkan 工作负载将报告 Skipped")
+endif()
 
 add_executable(gamebench src/main.cpp)
 target_link_libraries(gamebench PRIVATE gamebench_core)
@@ -68,9 +81,12 @@ if(GAMEBENCH_BUILD_TESTS)
     tests/scene_test.cpp
     tests/job_system_test.cpp
     tests/workload_test.cpp
+    tests/vulkan_test.cpp
   )
   target_link_libraries(gamebench_tests PRIVATE gamebench_core GTest::gtest_main)
-  gtest_discover_tests(gamebench_tests)
+  gtest_discover_tests(gamebench_tests TEST_FILTER "-VulkanTest.*")
+  add_test(NAME VulkanTest COMMAND gamebench_tests --gtest_filter=VulkanTest.*)
+  set_tests_properties(VulkanTest PROPERTIES ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0")
 endif()
 
 install(TARGETS gamebench RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")

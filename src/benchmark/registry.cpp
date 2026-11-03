@@ -5,6 +5,7 @@
 #include "benchmark/memory_workload.hpp"
 #include "benchmark/scene_workload.hpp"
 #include "benchmark/scheduler_workload.hpp"
+#include "benchmark/vulkan_workload.hpp"
 
 #include <stdexcept>
 #include <utility>
@@ -60,6 +61,8 @@ auto WorkloadRegistry::create_default() -> WorkloadRegistry {
                [] { return std::make_unique<MemoryWorkload>(); });
   registry.add({"scene", "1", "synthetic", "BVH 场景查询、剔除与 Draw Call 准备"},
                [] { return std::make_unique<SceneWorkload>(); });
+  registry.add({"vulkan", "1", "synthetic", "Vulkan Command Buffer 录制与 Offscreen 清屏"},
+               [] { return std::make_unique<VulkanWorkload>(); });
   return registry;
 }
 

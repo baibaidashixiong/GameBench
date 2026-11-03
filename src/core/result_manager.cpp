@@ -1,5 +1,6 @@
 #include "core/result_manager.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -52,6 +53,9 @@ void write_json_string_array(std::ostream& output, const std::vector<std::string
 }
 
 void write_json(const BenchmarkResult& result, std::ostream& output) {
+  const bool all_skipped =
+      std::ranges::all_of(result.runs, [](const BenchmarkRun& run) { return run.skipped; });
+  const auto top_status = all_skipped ? "skipped" : (result.valid ? "passed" : "failed");
   output << std::fixed << std::setprecision(9);
   output << "{\n"
          << "  \"schema_version\": 1,\n"
@@ -61,8 +65,7 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
   write_escaped_json(output, result.benchmark_version);
   output << ",\n  \"backend\": ";
   write_escaped_json(output, result.backend);
-  output << ",\n  \"validation_status\": " << (result.valid ? "\"passed\"" : "\"failed\"")
-         << ",\n  \"configuration\": {\n"
+  output << ",\n  \"validation_status\": \"" << top_status << '"' << ",\n  \"configuration\": {\n"
          << "    \"workload\": ";
   write_escaped_json(output, result.config.workload);
   output << ",\n    \"mode\": ";
@@ -73,6 +76,8 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
   write_escaped_json(output, to_string(result.config.layout));
   output << ",\n    \"memory_pattern\": ";
   write_escaped_json(output, to_string(result.config.memory_pattern));
+  output << ",\n    \"vulkan_mode\": ";
+  write_escaped_json(output, to_string(result.config.vulkan_mode));
   output << ",\n    \"seed\": " << result.config.seed
          << ",\n    \"objects\": " << result.config.objects
          << ",\n    \"working_set_bytes\": " << result.config.working_set_bytes
@@ -119,8 +124,8 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
            << ",\n      \"p99_9_frame_time_ms\": " << run.statistics.p999_ms
            << ",\n      \"maximum_frame_time_ms\": " << run.statistics.maximum_ms
            << ",\n      \"operations\": " << run.operations
-           << ",\n      \"checksum\": " << run.checksum
-           << ",\n      \"validation_status\": " << (run.valid ? "\"passed\"" : "\"failed\"")
+           << ",\n      \"checksum\": " << run.checksum << ",\n      \"validation_status\": "
+           << (run.skipped ? "\"skipped\"" : (run.valid ? "\"passed\"" : "\"failed\""))
            << ",\n      \"validation_message\": ";
     write_escaped_json(output, run.validation_message);
     if (run.scheduling) {
@@ -131,6 +136,13 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
              << ",\n        \"main_thread_jobs\": " << run.scheduling->main_thread_jobs
              << ",\n        \"exceptions\": " << run.scheduling->exceptions
              << ",\n        \"worker_busy_ms\": " << run.scheduling->worker_busy_ms << "\n      }";
+    }
+    if (run.vulkan) {
+      output << ",\n      \"vulkan\": {\n        \"device_name\": ";
+      write_escaped_json(output, run.vulkan->device_name);
+      output << ",\n        \"driver_name\": ";
+      write_escaped_json(output, run.vulkan->driver_name);
+      output << ",\n        \"api_version\": " << run.vulkan->api_version << "\n      }";
     }
     output << "\n    }";
   }
@@ -161,7 +173,7 @@ void write_csv(const BenchmarkResult& result, std::ostream& output) {
            << run.statistics.p95_ms << ',' << run.statistics.p99_ms << ',' << run.statistics.p999_ms
            << ',' << run.statistics.maximum_ms << ',' << scaling.speedup << ','
            << scaling.efficiency << ',' << run.operations << ',' << run.checksum << ','
-           << (run.valid ? "passed" : "failed") << '\n';
+           << (run.skipped ? "skipped" : (run.valid ? "passed" : "failed")) << '\n';
   }
 }
 

@@ -18,7 +18,8 @@ TEST(WorkloadTest, IntegerWorkloadIsDeterministic) {
       .scheduler = gamebench::core::SchedulerKind::WorkStealing,
       .layout = gamebench::core::DataLayout::SoA,
       .memory_pattern = gamebench::core::MemoryPattern::Sequential,
-      .working_set_bytes = 0};
+      .working_set_bytes = 0,
+      .vulkan_mode = gamebench::core::VulkanMode::NoSubmit};
   const auto first = workload->execute(config);
   const auto second = workload->execute(config);
 
@@ -31,7 +32,7 @@ TEST(WorkloadTest, RegistryListsRegisteredWorkloads) {
   const auto registry = gamebench::benchmark::WorkloadRegistry::create_default();
   EXPECT_TRUE(registry.contains("integer"));
   EXPECT_FALSE(registry.contains("missing"));
-  EXPECT_EQ(registry.descriptors().size(), 5U);
+  EXPECT_EQ(registry.descriptors().size(), 6U);
 }
 
 TEST(WorkloadTest, SchedulerWorkloadIsDeterministicAcrossModes) {
@@ -56,6 +57,7 @@ TEST(WorkloadTest, SchedulerWorkloadIsDeterministicAcrossModes) {
         .layout = gamebench::core::DataLayout::SoA,
         .memory_pattern = gamebench::core::MemoryPattern::Sequential,
         .working_set_bytes = 0,
+        .vulkan_mode = gamebench::core::VulkanMode::NoSubmit,
     };
     const auto output = workload->execute(config);
     EXPECT_TRUE(output.valid);
@@ -87,6 +89,7 @@ TEST(WorkloadTest, EcsWorkloadMatchesAcrossLayouts) {
         .layout = layouts[index],
         .memory_pattern = gamebench::core::MemoryPattern::Sequential,
         .working_set_bytes = 0,
+        .vulkan_mode = gamebench::core::VulkanMode::NoSubmit,
     };
     const auto output = workload->execute(config);
     EXPECT_TRUE(output.valid);
@@ -116,6 +119,7 @@ TEST(WorkloadTest, MemoryWorkloadSupportsAllAccessPatterns) {
         .layout = gamebench::core::DataLayout::SoA,
         .memory_pattern = pattern,
         .working_set_bytes = 64U * 1024U,
+        .vulkan_mode = gamebench::core::VulkanMode::NoSubmit,
     };
     const auto output = workload->execute(config);
     EXPECT_TRUE(output.valid);
@@ -139,6 +143,7 @@ TEST(WorkloadTest, SceneWorkloadKeepsSameWorkAcrossThreadCounts) {
         .layout = gamebench::core::DataLayout::SoA,
         .memory_pattern = gamebench::core::MemoryPattern::Sequential,
         .working_set_bytes = 0,
+        .vulkan_mode = gamebench::core::VulkanMode::NoSubmit,
     };
     const auto output = workload->execute(config);
     EXPECT_TRUE(output.valid);

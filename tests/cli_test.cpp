@@ -31,3 +31,15 @@ TEST(CliTest, RejectsUnknownOptions) {
   constexpr std::array arguments{std::string_view{"--unknown"}};
   EXPECT_THROW((void)gamebench::core::parse_run_config(arguments), std::invalid_argument);
 }
+
+TEST(CliTest, ParsesVulkanMode) {
+  constexpr std::array arguments{
+      std::string_view{"--workload"},
+      std::string_view{"vulkan"},
+      std::string_view{"--mode"},
+      std::string_view{"gpu-backed"},
+  };
+  const auto config = gamebench::core::parse_run_config(arguments);
+  EXPECT_EQ(config.workload, "vulkan");
+  EXPECT_EQ(config.vulkan_mode, gamebench::core::VulkanMode::GpuBacked);
+}

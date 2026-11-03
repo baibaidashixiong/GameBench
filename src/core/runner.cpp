@@ -16,6 +16,10 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
     const auto output = workload.execute(workload_config);
     const auto end = SteadyClock::now();
 
+    if (output.skipped) {
+      run.skipped = true;
+      run.validation_message = output.validation_message;
+    }
     if (!output.valid) {
       run.valid = false;
       run.validation_message = output.validation_message;
@@ -23,14 +27,19 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
     if (output.scheduling) {
       run.scheduling = output.scheduling;
     }
+    if (output.vulkan) {
+      run.vulkan = output.vulkan;
+    }
     if (iteration == 0) {
       run.checksum = output.checksum;
     } else {
       run.checksum = run.checksum * 1099511628211ULL + output.checksum;
     }
     if (measure) {
-      run.samples_ms.push_back(milliseconds_since(start, end));
-      run.operations += output.operations;
+      run.samples_ms.push_back(output.measured_time_ms.value_or(milliseconds_since(start, end)));
+      if (!output.skipped) {
+        run.operations += output.operations;
+      }
     }
   }
 }
@@ -79,6 +88,7 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
         .layout = config.layout,
         .memory_pattern = config.memory_pattern,
         .working_set_bytes = config.working_set_bytes,
+        .vulkan_mode = config.vulkan_mode,
     };
 
     execute_iterations(workload, workload_config, config.warmup_iterations, false, run_result);
@@ -86,7 +96,7 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
     run_result.operations = 0;
     execute_iterations(workload, workload_config, config.repetitions, true, run_result);
     run_result.statistics = calculate_statistics(run_result.samples_ms);
-    result.valid = result.valid && run_result.valid;
+    result.valid = result.valid && (run_result.valid || run_result.skipped);
     result.runs.push_back(std::move(run_result));
   }
 

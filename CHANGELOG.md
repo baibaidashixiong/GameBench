@@ -19,4 +19,7 @@
 - 增加 ECS 布局和内存访问模式 CLI 配置与结果元数据。
 - 实现场景 AABB、透视 Frustum、BVH、空间查询、可见性过滤、LOD 和 Draw Call 准备。
 - 增加 BVH 与暴力遍历对照验证，并将场景和调度任务图固定为与线程数无关的总工作量。
+- 实现可选 Vulkan 设备初始化、物理设备与驱动信息、每任务独立 Command Pool。
+- 支持多线程 No-Submit Command Buffer 录制和 Fence 管理的 GPU-backed Offscreen 清屏。
+- Vulkan 不可用时输出 Skipped；GPU-backed 计分时间排除 fence 等待并保留设备诊断信息。
 

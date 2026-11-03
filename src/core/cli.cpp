@@ -76,6 +76,7 @@ void print_help() {
             << "  --suite all              运行全部已实现工作负载\n"
             << "  --threads <1,2,4>        线程数量列表\n"
             << "  --mode <reproducible|realistic>\n"
+            << "  --mode <no-submit|gpu-backed> Vulkan 执行模式\n"
             << "  --scheduler <global-queue|static-partitioning|work-stealing>\n"
             << "  --layout <aos|soa|aosoa> ECS 数据布局\n"
             << "  --pattern <sequential|random|pointer-chasing|strided> 内存访问模式\n"
@@ -151,6 +152,16 @@ void print_help() {
   throw std::invalid_argument("--pattern 的值无效");
 }
 
+[[nodiscard]] auto parse_vulkan_mode(std::string_view value) -> VulkanMode {
+  if (value == "no-submit") {
+    return VulkanMode::NoSubmit;
+  }
+  if (value == "gpu-backed") {
+    return VulkanMode::GpuBacked;
+  }
+  throw std::invalid_argument("Vulkan --mode 仅支持 no-submit 或 gpu-backed");
+}
+
 void print_system_info() {
   const auto info = platform::collect_system_info();
   std::cout << "CPU 厂商: " << info.cpu_vendor << '\n'
@@ -177,7 +188,7 @@ void print_result(const BenchmarkResult& result, const std::filesystem::path& ou
   for (const auto& run : result.runs) {
     std::cout << "  线程 " << run.thread_count << ": 中位 " << std::fixed << std::setprecision(3)
               << run.statistics.median_ms << " ms, P99 " << run.statistics.p99_ms << " ms, 校验 "
-              << (run.valid ? "通过" : "失败") << '\n';
+              << (run.skipped ? "跳过" : (run.valid ? "通过" : "失败")) << '\n';
   }
   std::cout << "结果: " << output << '\n';
 }
@@ -281,7 +292,12 @@ auto parse_run_config(std::span<const std::string_view> arguments) -> RunConfig 
     } else if (option == "--threads") {
       config.thread_counts = parse_threads(option_value(arguments, index));
     } else if (option == "--mode") {
-      config.mode = parse_mode(option_value(arguments, index));
+      const auto mode = option_value(arguments, index);
+      if (mode == "no-submit" || mode == "gpu-backed") {
+        config.vulkan_mode = parse_vulkan_mode(mode);
+      } else {
+        config.mode = parse_mode(mode);
+      }
     } else if (option == "--scheduler") {
       config.scheduler = parse_scheduler(option_value(arguments, index));
     } else if (option == "--layout") {

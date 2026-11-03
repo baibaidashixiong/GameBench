@@ -31,6 +31,12 @@ ECS 工作负载实现 AoS、SoA 和 16 实体分块的 AoSoA 布局，共享相
 
 场景工作负载构造确定性的 AABB 对象集合和基于最长质心轴的 BVH。每个视图执行 AABB 空间查询、Frustum Culling、可见对象过滤、LOD 选择和 Draw Command 生成。自动化测试对 BVH 可见集合计数与暴力遍历对照；线程扩展性测试使用固定的 64 个视图分片，保证不同线程数执行相同总工作。
 
+## Vulkan
+
+Vulkan 后端是可选模块。构建时找到 Vulkan Loader 后启用，运行时不强制要求可用设备。No-Submit 模式并行录制 Command Buffer 但不提交；GPU-backed 模式采用三组 Fence 提交轻量 Offscreen 图像清屏。每个录制分片拥有独立 Command Pool，避免跨线程复用外部同步。GPU-backed 的样本时间记录 CPU 端录制与提交调用，fence 等待在采样结束后执行，设备、驱动和 API 版本作为诊断写入结果。
+
+Mesa/RADV 等驱动可能在 LeakSanitizer 中报告驱动级分配，并在 ThreadSanitizer 中报告驱动内部同步。测试只对 Vulkan 驱动聚合测试关闭 LeakSanitizer，并在 TSan 构建中跳过 Vulkan 驱动调用；GameBench 自有线程与内存模块仍运行完整 Sanitizer 检查。
+
 ## 可复现性
 
 每个工作负载接收规范化配置、固定随机种子和显式线程数。运行结果记录硬件、环境、编译类型、Affinity 和版本信息。异常值不会被静默删除。

@@ -21,6 +21,7 @@ struct WorkloadConfig {
   core::DataLayout layout{core::DataLayout::SoA};
   core::MemoryPattern memory_pattern{core::MemoryPattern::Sequential};
   std::uint64_t working_set_bytes{};
+  core::VulkanMode vulkan_mode{core::VulkanMode::NoSubmit};
 };
 
 struct SchedulingMetrics {
@@ -32,12 +33,21 @@ struct SchedulingMetrics {
   double worker_busy_ms{};
 };
 
+struct VulkanDiagnostics {
+  std::string device_name;
+  std::string driver_name;
+  std::uint32_t api_version{};
+};
+
 struct WorkloadOutput {
   std::uint64_t checksum{};
   std::uint64_t operations{};
   bool valid{};
+  bool skipped{};
   std::string validation_message;
   std::optional<SchedulingMetrics> scheduling;
+  std::optional<VulkanDiagnostics> vulkan;
+  std::optional<double> measured_time_ms;
 };
 
 class Workload {
