@@ -109,12 +109,7 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
     write_escaped_json(output, profile.id);
     output << ",\n    \"version\": ";
     write_escaped_json(output, profile.version);
-    output << ",\n    \"load_variation_version\": " << profile.load_variation_version
-           << ",\n    \"minimum_load_percent\": " << profile.minimum_load_percent
-           << ",\n    \"maximum_load_percent\": " << profile.maximum_load_percent
-           << ",\n    \"burst_chance_per_mille\": " << profile.burst_chance_per_mille
-           << ",\n    \"burst_load_percent\": " << profile.burst_load_percent
-           << ",\n    \"ecs_entities\": " << profile.ecs_entities
+    output << ",\n    \"ecs_entities\": " << profile.ecs_entities
            << ",\n    \"scene_objects\": " << profile.scene_objects
            << ",\n    \"scene_views\": " << profile.scene_views
            << ",\n    \"physics_bodies\": " << profile.physics_bodies
@@ -224,13 +219,6 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
     }
     if (run.total_cpu_work_ms) {
       output << ",\n      \"total_cpu_work_ms\": " << *run.total_cpu_work_ms;
-    }
-    if (run.simulated_load_samples > 0) {
-      output << ",\n      \"simulated_load\": {\n        \"mean_percent\": "
-             << run.mean_simulated_load_percent
-             << ",\n        \"minimum_percent\": " << run.minimum_simulated_load_percent
-             << ",\n        \"maximum_percent\": " << run.maximum_simulated_load_percent
-             << "\n      }";
     }
     output << ",\n      \"operations\": " << run.operations
            << ",\n      \"checksum\": " << run.checksum << ",\n      \"validation_status\": "

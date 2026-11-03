@@ -62,7 +62,7 @@ gamebench compare result-a.json result-b.json
 
 `source2-like` Profile 不启动真实 Source 2，而是把 ECS、Scene、Physics、Animation、AI、Audio 和 Vulkan 录制组合成一条带依赖的 Synthetic 游戏帧。具体规模和限制见 `docs/source2-like-profile.md`。
 
-直接执行 `gamebench run` 会使用 `source2-like` Profile、自动物理核心线程梯度、30 帧预热和 100 帧采样。Profile v2 使用固定种子产生 45% 到 100% 的帧负载波动，用于覆盖轻载、常规和突发场景。
+直接执行 `gamebench run` 会使用固定规模的 `source2-like` Profile、自动物理核心线程梯度、30 帧预热和 100 帧采样。
 
 `system-info` 会报告 hwloc 检测出的逻辑处理器、物理核心、SMT、NUMA、缓存、允许 CPU 列表以及可读取的频率和温度。可用 `--cpu-affinity 0,2`、`--physical-core 0` 或 `--numa-node 0` 选择绑定集合。无法可靠识别的 CCD 或 P/E Core 类型会明确显示 `Unknown`。硬件计数器受 `perf_event_open` 权限限制，不可用时结果保留为 `available: false`。
 

@@ -13,11 +13,6 @@ struct FrameProfile {
   std::string id;
   std::string version;
   std::string description;
-  std::uint32_t load_variation_version{};
-  std::uint32_t minimum_load_percent{};
-  std::uint32_t maximum_load_percent{};
-  std::uint32_t burst_chance_per_mille{};
-  std::uint32_t burst_load_percent{};
   std::size_t ecs_entities{};
   std::size_t scene_objects{};
   unsigned scene_views{};

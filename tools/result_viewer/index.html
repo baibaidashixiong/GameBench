@@ -125,11 +125,11 @@
           <thead>
             <tr>
               <th>文件</th><th>工作负载</th><th>后端</th><th>线程</th>
-              <th>中位 ms</th><th>P99 ms</th><th>负载均值</th><th>吞吐 ops/s</th>
+              <th>中位 ms</th><th>P99 ms</th><th>吞吐 ops/s</th>
               <th>扩展指数</th><th>主线程 ms</th><th>迁移</th><th>状态</th>
             </tr>
           </thead>
-          <tbody id="result-body"><tr><td colspan="12" class="empty">无数据</td></tr></tbody>
+          <tbody id="result-body"><tr><td colspan="11" class="empty">无数据</td></tr></tbody>
         </table>
       </div>
     </section>
@@ -183,7 +183,6 @@
             threads: threadCount,
             median: Number(run.median_frame_time_ms),
             p99: Number(run.p99_frame_time_ms),
-            meanLoad: Number(run.simulated_load?.mean_percent || 0),
             throughput: Number(score?.throughput_operations_per_second || 0),
             scalingScore: Number(score?.thread_scaling_score || 0),
             mainThread: Number(run.main_thread_time_ms || 0),
@@ -244,7 +243,7 @@
       if (state.rows.length === 0) {
         const row = document.createElement('tr');
         const cell = document.createElement('td');
-        cell.colSpan = 12;
+        cell.colSpan = 11;
         cell.className = 'empty';
         cell.textContent = '无数据';
         row.append(cell);
@@ -254,8 +253,7 @@
       for (const row of state.rows) {
         const tr = document.createElement('tr');
         const values = [row.file, row.workload, row.backend, row.threads, number(row.median), number(row.p99),
-          row.meanLoad > 0 ? `${number(row.meanLoad, 1)}%` : '—', number(row.throughput, 0),
-          number(row.scalingScore, 1), number(row.mainThread), row.migrations];
+          number(row.throughput, 0), number(row.scalingScore, 1), number(row.mainThread), row.migrations];
         for (const value of values) {
           const td = document.createElement('td');
           td.textContent = value;
@@ -382,10 +380,10 @@
       render();
     });
     exportCsv.addEventListener('click', () => {
-      const header = ['file','workload','backend','threads','median_ms','p99_ms','mean_load_percent','throughput_ops_s','scaling_score','main_thread_ms','migrations','status'];
+      const header = ['file','workload','backend','threads','median_ms','p99_ms','throughput_ops_s','scaling_score','main_thread_ms','migrations','status'];
       const lines = [header.join(',')];
       for (const row of state.rows) {
-        lines.push([row.file, row.workload, row.backend, row.threads, row.median, row.p99, row.meanLoad,
+        lines.push([row.file, row.workload, row.backend, row.threads, row.median, row.p99,
           row.throughput, row.scalingScore, row.mainThread, row.migrations, row.status]
           .map(value => `"${String(value).replaceAll('"', '""')}"`).join(','));
       }

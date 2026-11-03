@@ -39,6 +39,6 @@
 - 增加 `source2-like` 版本化 Frame Profile 与 `game-frame` 单帧合成工作负载。
 - 使用依赖任务图组合 ECS、Scene、Physics、Animation、AI、Audio 与 Vulkan No-Submit 录制。
 - 修复连续帧中 Scheduler 和 Game Frame 的统计基线，避免提交数与 Worker 忙碌时间跨帧累计。
-- 将 `source2-like` Profile 升级到 v2，加入固定种子的帧负载波动与突发模型。
-- 简化默认命令：直接执行 `gamebench run` 会运行 Source 2-like 并自动生成物理核心线程梯度。
+- 简化默认命令：直接执行 `gamebench run` 会运行固定规模的 Source 2-like Profile，并自动生成物理核心线程梯度。
+- 撤回 Source 2-like 负载波动模型，恢复所有帧使用固定 Profile 规模。
 
