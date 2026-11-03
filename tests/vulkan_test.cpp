@@ -23,6 +23,8 @@ namespace {
       .memory_pattern = gamebench::core::MemoryPattern::Sequential,
       .working_set_bytes = 0,
       .vulkan_mode = mode,
+      .audio_buffer_size = 1024,
+      .sample_rate = 48000,
   };
 }
 

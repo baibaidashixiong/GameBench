@@ -89,6 +89,8 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
         .memory_pattern = config.memory_pattern,
         .working_set_bytes = config.working_set_bytes,
         .vulkan_mode = config.vulkan_mode,
+        .audio_buffer_size = config.audio_buffer_size,
+        .sample_rate = config.sample_rate,
     };
 
     execute_iterations(workload, workload_config, config.warmup_iterations, false, run_result);

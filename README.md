@@ -43,11 +43,15 @@ gamebench run --workload memory --pattern pointer-chasing --working-set 16777216
 gamebench run --workload scene --threads 1,2,4,8 --objects 50000
 gamebench run --workload vulkan --mode no-submit --threads 1,2,4
 gamebench run --workload vulkan --mode gpu-backed --threads 1,2,4
+gamebench run --workload physics --threads 8 --objects 50000
+gamebench run --workload animation --threads 1,2,4,8
+gamebench run --workload ai --threads 1,2,4,8
+gamebench run --workload audio --buffer-size 1024 --sample-rate 48000
 gamebench run --workload integer --format csv --output result.csv
 gamebench compare result-a.json result-b.json
 ```
 
-当前注册了 `integer`、`scheduler`、`ecs`、`memory`、`scene` 和 `vulkan` 工作负载。Vulkan 不可用时对应结果会标记为 `skipped`。后续工作负载只有在实现并通过校验后才会出现在 `gamebench list` 中。具体参数以 `gamebench --help` 的输出为准。
+当前注册了 `integer`、`scheduler`、`ecs`、`memory`、`scene`、`vulkan`、`physics`、`animation`、`ai` 和 `audio` 工作负载。Vulkan 不可用时对应结果会标记为 `skipped`。Physics 当前使用原生轻量后端；当前环境未安装 Jolt Physics，因此 Jolt 后端尚未启用。后续工作负载只有在实现并通过校验后才会出现在 `gamebench list` 中。具体参数以 `gamebench --help` 的输出为准。
 
 ## 项目状态
 

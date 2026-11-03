@@ -1,8 +1,12 @@
 #include "benchmark/registry.hpp"
 
+#include "benchmark/ai_workload.hpp"
+#include "benchmark/animation_workload.hpp"
+#include "benchmark/audio_workload.hpp"
 #include "benchmark/ecs_workload.hpp"
 #include "benchmark/integer_workload.hpp"
 #include "benchmark/memory_workload.hpp"
+#include "benchmark/physics_workload.hpp"
 #include "benchmark/scene_workload.hpp"
 #include "benchmark/scheduler_workload.hpp"
 #include "benchmark/vulkan_workload.hpp"
@@ -63,6 +67,14 @@ auto WorkloadRegistry::create_default() -> WorkloadRegistry {
                [] { return std::make_unique<SceneWorkload>(); });
   registry.add({"vulkan", "1", "synthetic", "Vulkan Command Buffer 录制与 Offscreen 清屏"},
                [] { return std::make_unique<VulkanWorkload>(); });
+  registry.add({"physics", "1", "synthetic", "刚体积分、Broad-phase 与碰撞检测"},
+               [] { return std::make_unique<PhysicsWorkload>(); });
+  registry.add({"animation", "1", "synthetic", "动画采样、混合与骨骼传播"},
+               [] { return std::make_unique<AnimationWorkload>(); });
+  registry.add({"ai", "1", "synthetic", "Agent 决策树与 A* Navigation 查询"},
+               [] { return std::make_unique<AiWorkload>(); });
+  registry.add({"audio", "1", "synthetic", "FIR、重采样、Reverb 与 Stereo Mixing"},
+               [] { return std::make_unique<AudioWorkload>(); });
   return registry;
 }
 

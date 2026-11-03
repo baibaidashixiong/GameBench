@@ -22,4 +22,9 @@
 - 实现可选 Vulkan 设备初始化、物理设备与驱动信息、每任务独立 Command Pool。
 - 支持多线程 No-Submit Command Buffer 录制和 Fence 管理的 GPU-backed Offscreen 清屏。
 - Vulkan 不可用时输出 Skipped；GPU-backed 计分时间排除 fence 等待并保留设备诊断信息。
+- 实现原生刚体积分、Sweep-and-Prune Broad-phase、碰撞检测和空间查询工作负载。
+- 实现动画采样、姿态混合、四元数骨骼传播和 Forward Kinematics 工作负载。
+- 实现 Agent 决策树、A* Navigation 查询和路径生成工作负载。
+- 实现多音源 FIR、上采样、线性重采样、Reverb 与 Stereo Mixing 离线 Audio DSP 工作负载。
+- 增加 Audio Buffer 与采样率配置；当前环境缺少 Jolt Physics，原生 Physics 后端保持可用。
 

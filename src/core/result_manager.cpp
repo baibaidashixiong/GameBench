@@ -81,6 +81,8 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
   output << ",\n    \"seed\": " << result.config.seed
          << ",\n    \"objects\": " << result.config.objects
          << ",\n    \"working_set_bytes\": " << result.config.working_set_bytes
+         << ",\n    \"audio_buffer_size\": " << result.config.audio_buffer_size
+         << ",\n    \"sample_rate\": " << result.config.sample_rate
          << ",\n    \"iterations\": " << result.config.iterations
          << ",\n    \"warmup_iterations\": " << result.config.warmup_iterations
          << ",\n    \"repetitions\": " << result.config.repetitions << "\n  },\n"

@@ -24,6 +24,8 @@ struct RunConfig {
   DataLayout layout{DataLayout::SoA};
   MemoryPattern memory_pattern{MemoryPattern::Sequential};
   VulkanMode vulkan_mode{VulkanMode::NoSubmit};
+  std::uint32_t audio_buffer_size{1024};
+  std::uint32_t sample_rate{48000};
   std::uint64_t seed{1337};
   std::uint64_t objects{65536};
   std::uint64_t iterations{1};

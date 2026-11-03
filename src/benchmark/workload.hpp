@@ -22,6 +22,8 @@ struct WorkloadConfig {
   core::MemoryPattern memory_pattern{core::MemoryPattern::Sequential};
   std::uint64_t working_set_bytes{};
   core::VulkanMode vulkan_mode{core::VulkanMode::NoSubmit};
+  std::uint32_t audio_buffer_size{1024};
+  std::uint32_t sample_rate{48000};
 };
 
 struct SchedulingMetrics {

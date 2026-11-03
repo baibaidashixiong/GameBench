@@ -32,9 +32,14 @@ if(GAMEBENCH_ENABLE_VULKAN)
 endif()
 
 add_library(gamebench_core STATIC
+  src/audio/dsp.cpp
+  src/benchmark/ai_workload.cpp
+  src/benchmark/animation_workload.cpp
+  src/benchmark/audio_workload.cpp
   src/benchmark/ecs_workload.cpp
   src/benchmark/integer_workload.cpp
   src/benchmark/memory_workload.cpp
+  src/benchmark/physics_workload.cpp
   src/benchmark/registry.cpp
   src/benchmark/scheduler_workload.cpp
   src/benchmark/scene_workload.cpp
@@ -50,6 +55,9 @@ add_library(gamebench_core STATIC
   src/runtime/job_system.cpp
   src/runtime/memory_system.cpp
   src/simulation/ecs.cpp
+  src/simulation/animation.cpp
+  src/simulation/navigation.cpp
+  src/simulation/physics.cpp
   src/simulation/scene.cpp
 )
 target_include_directories(gamebench_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -72,9 +80,13 @@ if(GAMEBENCH_BUILD_TESTS)
   include(GoogleTest)
 
   add_executable(gamebench_tests
+    tests/ai_test.cpp
+    tests/animation_test.cpp
+    tests/audio_test.cpp
     tests/cli_test.cpp
     tests/ecs_test.cpp
     tests/memory_system_test.cpp
+    tests/physics_test.cpp
     tests/smoke_test.cpp
     tests/timing_test.cpp
     tests/runner_test.cpp

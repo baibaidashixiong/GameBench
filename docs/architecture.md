@@ -37,6 +37,12 @@ Vulkan 后端是可选模块。构建时找到 Vulkan Loader 后启用，运行�
 
 Mesa/RADV 等驱动可能在 LeakSanitizer 中报告驱动级分配，并在 ThreadSanitizer 中报告驱动内部同步。测试只对 Vulkan 驱动聚合测试关闭 LeakSanitizer，并在 TSan 构建中跳过 Vulkan 驱动调用；GameBench 自有线程与内存模块仍运行完整 Sanitizer 检查。
 
+## 游戏模拟与音频
+
+Physics 使用确定性的原生刚体、积分、Sweep-and-Prune Broad-phase、球体碰撞检测和空间查询。Jolt Physics 保留为可选后端，但只有实际完成适配并通过测试后才会出现在工作负载列表中；当前环境未安装 Jolt，因此没有伪造 Jolt 结果。
+
+Animation 工作负载对两套程序化动画采样并进行姿态混合，在固定骨骼层级上执行四元数变换与 Forward Kinematics。AI 工作负载结合行为决策树和 A* Navigation 查询。Audio 工作负载在 CPU 上完成多通道合成、FIR、双倍采样输入、线性重采样、Reverb 和 Stereo Mixing，不访问音频设备。
+
 ## 可复现性
 
 每个工作负载接收规范化配置、固定随机种子和显式线程数。运行结果记录硬件、环境、编译类型、Affinity 和版本信息。异常值不会被静默删除。

@@ -81,6 +81,8 @@ void print_help() {
             << "  --layout <aos|soa|aosoa> ECS 数据布局\n"
             << "  --pattern <sequential|random|pointer-chasing|strided> 内存访问模式\n"
             << "  --working-set <字节>     内存工作集大小\n"
+            << "  --buffer-size <帧数>     Audio DSP 缓冲区大小\n"
+            << "  --sample-rate <Hz>       Audio DSP 输出采样率\n"
             << "  --seed <整数>            固定随机种子\n"
             << "  --objects <数量>         工作负载规模\n"
             << "  --iterations <数量>      每个样本内的工作负载迭代数\n"
@@ -307,6 +309,11 @@ auto parse_run_config(std::span<const std::string_view> arguments) -> RunConfig 
     } else if (option == "--working-set") {
       config.working_set_bytes =
           parse_integer<std::uint64_t>(option_value(arguments, index), option);
+    } else if (option == "--buffer-size") {
+      config.audio_buffer_size =
+          parse_integer<std::uint32_t>(option_value(arguments, index), option);
+    } else if (option == "--sample-rate") {
+      config.sample_rate = parse_integer<std::uint32_t>(option_value(arguments, index), option);
     } else if (option == "--seed") {
       config.seed = parse_integer<std::uint64_t>(option_value(arguments, index), option);
     } else if (option == "--objects") {

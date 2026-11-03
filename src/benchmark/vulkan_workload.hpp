@@ -11,7 +11,7 @@ class VulkanContext;
 #else
 class VulkanContext final {};
 #endif
-}
+} // namespace gamebench::renderer
 
 namespace gamebench::runtime {
 class JobSystem;
