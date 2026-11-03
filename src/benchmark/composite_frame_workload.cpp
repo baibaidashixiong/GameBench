@@ -122,8 +122,8 @@ void CompositeFrameWorkload::Impl::ensure(const WorkloadConfig& config) {
   simd_particles = std::make_unique<simulation::SimdParticleSystem>(profile.simd_particles, 0x5eed);
   navigation = std::make_unique<simulation::NavigationGrid>(64, 64, 0x5eed);
   jobs = std::make_unique<runtime::JobSystem>(runtime::JobSystemConfig{
-      .worker_count = std::max(1U, config.thread_count - 1U),
-      .main_thread_participates = config.thread_count > 1,
+      .worker_count = job_worker_count(config),
+      .main_thread_participates = config.thread_count > 0,
       .scheduler = config.scheduler,
       .cpu_affinity = worker_affinity(config),
   });
@@ -382,6 +382,7 @@ auto CompositeFrameWorkload::Impl::schedule(const WorkloadConfig& config) -> Wor
   }
   output.vulkan = vulkan_diagnostics;
   output.simd_backend = simulation::simd_backend_name();
+  set_job_execution_metadata(output, config);
   const auto current = jobs->statistics();
   const runtime::SchedulerStatistics empty_statistics;
   const auto& previous = previous_cumulative.value_or(empty_statistics);

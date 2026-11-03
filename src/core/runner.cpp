@@ -13,8 +13,9 @@ namespace gamebench::core {
 
 void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
                                          const benchmark::WorkloadConfig& workload_config,
-                                         std::uint64_t iterations, bool measure,
-                                         BenchmarkRun& run) {
+                                         std::uint64_t iterations, bool measure, BenchmarkRun& run,
+                                         std::vector<double>* worker_busy_samples,
+                                         std::vector<double>* total_cpu_work_samples) {
   for (std::uint64_t iteration = 0; iteration < iterations; ++iteration) {
     const auto start = SteadyClock::now();
     const auto cpu_start = current_thread_cpu_time_ms();
@@ -41,6 +42,10 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
     if (!output.simd_backend.empty()) {
       run.simd_backend = output.simd_backend;
     }
+    if (!output.execution_mode.empty()) {
+      run.worker_count = output.worker_count;
+      run.execution_mode = output.execution_mode;
+    }
     if (!output.warnings.empty()) {
       run.warnings = output.warnings;
     }
@@ -51,7 +56,16 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
     }
     if (measure) {
       run.samples_ms.push_back(output.measured_time_ms.value_or(milliseconds_since(start, end)));
-      run.main_thread_cpu_ms.push_back(cpu_end - cpu_start);
+      const auto main_thread_cpu_ms = cpu_end - cpu_start;
+      run.main_thread_cpu_ms.push_back(main_thread_cpu_ms);
+      if (output.scheduling) {
+        if (worker_busy_samples != nullptr) {
+          worker_busy_samples->push_back(output.scheduling->worker_busy_ms);
+        }
+        if (total_cpu_work_samples != nullptr) {
+          total_cpu_work_samples->push_back(main_thread_cpu_ms + output.scheduling->worker_busy_ms);
+        }
+      }
       if (cpu_before >= 0 && cpu_after >= 0 && cpu_before != cpu_after) {
         ++run.main_thread_cpu_migrations;
       }
@@ -64,7 +78,6 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
 
 auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config)
     -> BenchmarkResult {
-  const platform::ScopedThreadAffinity affinity(config.cpu_affinity);
   if (config.thread_counts.empty()) {
     throw std::invalid_argument("线程数量不能为空");
   }
@@ -88,6 +101,11 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
     }
   }
 
+  const std::vector<unsigned> main_affinity =
+      config.cpu_affinity.empty() ? std::vector<unsigned>{}
+                                  : std::vector<unsigned>{config.cpu_affinity.front()};
+  const platform::ScopedThreadAffinity affinity(main_affinity);
+
   BenchmarkResult result;
   result.benchmark_id = std::string{workload.id()};
   result.benchmark_version = std::string{workload.version()};
@@ -103,6 +121,7 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
   for (const auto thread_count : config.thread_counts) {
     BenchmarkRun run_result;
     run_result.thread_count = thread_count;
+    run_result.execution_mode = "serial-main";
     run_result.valid = true;
     run_result.operations = 0;
 
@@ -125,14 +144,16 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
     execute_iterations(workload, workload_config, config.warmup_iterations, false, run_result);
     run_result.checksum = 0;
     run_result.operations = 0;
-    execute_iterations(workload, workload_config, config.repetitions, true, run_result);
+    std::vector<double> worker_busy_samples;
+    std::vector<double> total_cpu_work_samples;
+    execute_iterations(workload, workload_config, config.repetitions, true, run_result,
+                       &worker_busy_samples, &total_cpu_work_samples);
     run_result.statistics = calculate_statistics(run_result.samples_ms);
     run_result.main_thread_time_ms = calculate_statistics(run_result.main_thread_cpu_ms).median_ms;
     run_result.critical_path_time_ms = run_result.statistics.median_ms;
-    if (run_result.scheduling) {
-      run_result.worker_thread_time_ms = run_result.scheduling->worker_busy_ms;
-      run_result.total_cpu_work_ms =
-          run_result.main_thread_time_ms + run_result.scheduling->worker_busy_ms;
+    if (!worker_busy_samples.empty()) {
+      run_result.worker_thread_time_ms = calculate_statistics(worker_busy_samples).median_ms;
+      run_result.total_cpu_work_ms = calculate_statistics(total_cpu_work_samples).median_ms;
     }
     result.valid = result.valid && (run_result.valid || run_result.skipped);
     result.runs.push_back(std::move(run_result));

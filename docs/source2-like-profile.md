@@ -34,6 +34,8 @@ Profile 与 `game-frame` 工作负载版本均为 `2`，结果 JSON 中的 `conf
 
 每帧输出完整 wall time、主线程 CPU 时间、Worker 忙碌时间、关键路径、任务提交/完成数和 Work Stealing 次数。
 
+`--threads 1` 使用 `main-inline`：不创建 Worker，所有 Job 由主线程执行。`--threads N` 使用 `main-plus-workers`：主线程和 `N-1` 个 Worker 共同执行。结果 JSON/CSV 记录 `execution_mode` 与 `worker_count`；线程扩展性以新的 1 线程主线程基线计算。
+
 JSON 中的 `operations` 是当前线程配置全部采样帧的累计固定操作数，不同线程数应得到相同值；吞吐评分使用该累计值与中位帧时间计算，不会把模块 FPS 直接相加。
 
 ## 使用

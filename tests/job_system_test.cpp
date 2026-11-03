@@ -71,3 +71,41 @@ TEST(JobSystemTest, ShutdownWaitsForSubmittedWork) {
     EXPECT_EQ(count.load(), 32U);
   }
 }
+
+TEST(JobSystemTest, MainThreadExecutesWithoutWorkersInAllSchedulerModes) {
+  constexpr std::array modes{
+      gamebench::core::SchedulerKind::GlobalQueue,
+      gamebench::core::SchedulerKind::StaticPartitioning,
+      gamebench::core::SchedulerKind::WorkStealing,
+  };
+
+  for (const auto mode : modes) {
+    gamebench::runtime::JobSystem system({.worker_count = 0,
+                                          .main_thread_participates = true,
+                                          .scheduler = mode,
+                                          .cpu_affinity = {}});
+    std::atomic<unsigned> count{0};
+    auto first = system.submit([&count] { count.fetch_add(1); });
+    const std::array dependencies{first};
+    auto second = system.submit([&count] { count.fetch_add(1); }, dependencies);
+
+    system.wait(second);
+    const auto statistics = system.statistics();
+    EXPECT_EQ(count.load(), 2U);
+    EXPECT_EQ(system.worker_count(), 0U);
+    EXPECT_EQ(statistics.submitted_jobs, 2U);
+    EXPECT_EQ(statistics.completed_jobs, 2U);
+    EXPECT_EQ(statistics.main_thread_jobs, 2U);
+    EXPECT_TRUE(statistics.worker_busy_ms.empty());
+  }
+}
+
+TEST(JobSystemTest, RejectsConfigurationWithoutExecutionParticipants) {
+  const gamebench::runtime::JobSystemConfig config{
+      .worker_count = 0,
+      .main_thread_participates = false,
+      .scheduler = gamebench::core::SchedulerKind::WorkStealing,
+      .cpu_affinity = {},
+  };
+  EXPECT_THROW(gamebench::runtime::JobSystem{config}, std::invalid_argument);
+}

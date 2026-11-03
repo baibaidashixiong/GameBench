@@ -17,6 +17,8 @@ namespace gamebench::core {
 
 struct BenchmarkRun {
   unsigned thread_count{};
+  unsigned worker_count{};
+  std::string execution_mode;
   std::vector<double> samples_ms;
   std::vector<double> main_thread_cpu_ms;
   SampleStatistics statistics;
@@ -63,7 +65,9 @@ public:
 private:
   static void execute_iterations(benchmark::Workload& workload,
                                  const benchmark::WorkloadConfig& workload_config,
-                                 std::uint64_t iterations, bool measure, BenchmarkRun& run);
+                                 std::uint64_t iterations, bool measure, BenchmarkRun& run,
+                                 std::vector<double>* worker_busy_samples = nullptr,
+                                 std::vector<double>* total_cpu_work_samples = nullptr);
 };
 
 } // namespace gamebench::core

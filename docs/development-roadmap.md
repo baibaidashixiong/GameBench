@@ -99,4 +99,5 @@
 - 使用版本化 Profile 组合 ECS、Scene、Physics、Animation、AI、SIMD、Audio 与 Vulkan CPU 阶段。
 - Profile v2 使用固定规模的三组 Scene 和 SSE2 粒子任务，扩大缓存压力与指令数量但不注入人工帧时间波动。
 - 每份结果记录 Profile 版本、SIMD 后端、固定操作数、原始样本、分位数和校验状态；v1 与 v2 结果分别比较。
+- 执行模型 v2 将 `threads` 定义为包含主线程的总参与者；1 线程由主线程闭环执行，CPU 统计使用一致的逐帧样本口径。
 

@@ -21,7 +21,7 @@
 
 RAII 管理线程、Vulkan 设备、内存池和结果文件。任务系统通过原子依赖计数和完成事件管理生命周期。关闭流程先停止接收任务，再排空或取消未执行任务，最后回收所有 Worker。
 
-Job System 支持 Global Queue、Static Partitioning 和 Work Stealing 三种模式。每个任务拥有原子依赖计数，JobSystem 在任务完成前保留强引用；依赖满足后任务才进入调度队列。异常被捕获到任务状态中，由等待方显式重新抛出。主线程可在等待期间参与执行任务，Worker 可通过配置的 Linux 逻辑 CPU 列表设置 Affinity。
+Job System 支持 Global Queue、Static Partitioning 和 Work Stealing 三种模式。每个任务拥有原子依赖计数，JobSystem 在任务完成前保留强引用；依赖满足后任务才进入调度队列。异常被捕获到任务状态中，由等待方显式重新抛出。执行参与者总数固定为 `threads`：1 线程时 Worker 数为零，主线程在等待期间消费队列；多线程时主线程与 `N-1` 个 Worker 共同执行。Worker 可通过配置的 Linux 逻辑 CPU 列表设置 Affinity。
 
 ## ECS 与内存
 

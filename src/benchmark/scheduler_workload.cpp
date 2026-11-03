@@ -89,6 +89,7 @@ auto SchedulerWorkload::execute(const WorkloadConfig& config) -> WorkloadOutput 
   if (!output.valid) {
     output.validation_message = "调度工作负载分片数量不匹配";
   }
+  set_job_execution_metadata(output, config);
   output.scheduling = SchedulingMetrics{
       .submitted_jobs = current.submitted_jobs -
                         (has_previous_statistics_ ? previous_cumulative_.submitted_jobs : 0),
@@ -118,10 +119,10 @@ void SchedulerWorkload::ensure_system(const WorkloadConfig& config) {
   prepared_scheduler_ = config.scheduler;
   previous_cumulative_ = {};
   has_previous_statistics_ = false;
-  const auto worker_count = std::max(1U, config.thread_count - 1U);
+  const auto worker_count = job_worker_count(config);
   system_ = std::make_unique<runtime::JobSystem>(runtime::JobSystemConfig{
       .worker_count = worker_count,
-      .main_thread_participates = config.thread_count > 1,
+      .main_thread_participates = config.thread_count > 0,
       .scheduler = config.scheduler,
       .cpu_affinity = worker_affinity(config),
   });

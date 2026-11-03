@@ -27,7 +27,34 @@ TEST(RunnerTest, RunsAndValidatesWorkload) {
   EXPECT_EQ(result.runs.front().samples_ms.size(), 3U);
   EXPECT_TRUE(result.runs.front().valid);
   EXPECT_EQ(result.runs.front().operations, 3072U);
+  EXPECT_EQ(result.runs.front().worker_count, 0U);
+  EXPECT_EQ(result.runs.front().execution_mode, "serial-main");
   EXPECT_DOUBLE_EQ(result.thread_scaling.front().speedup, 1.0);
+}
+
+TEST(RunnerTest, SingleThreadRunsJobsOnMainThreadAndUsesMatchingCpuScope) {
+  auto workload = gamebench::benchmark::WorkloadRegistry::create_default().create("scheduler");
+  ASSERT_NE(workload, nullptr);
+
+  gamebench::core::RunConfig config;
+  config.thread_counts = {1};
+  config.objects = 1024;
+  config.warmup_iterations = 0;
+  config.repetitions = 3;
+
+  const auto result = gamebench::core::BenchmarkRunner{}.run(*workload, config);
+  ASSERT_TRUE(result.valid);
+  ASSERT_EQ(result.runs.size(), 1U);
+  const auto& run = result.runs.front();
+  EXPECT_EQ(run.thread_count, 1U);
+  EXPECT_EQ(run.worker_count, 0U);
+  EXPECT_EQ(run.execution_mode, "main-inline");
+  ASSERT_TRUE(run.scheduling.has_value());
+  EXPECT_EQ(run.scheduling->main_thread_jobs, run.scheduling->submitted_jobs);
+  ASSERT_TRUE(run.worker_thread_time_ms.has_value());
+  EXPECT_EQ(*run.worker_thread_time_ms, 0.0);
+  ASSERT_TRUE(run.total_cpu_work_ms.has_value());
+  EXPECT_DOUBLE_EQ(*run.total_cpu_work_ms, run.main_thread_time_ms);
 }
 
 TEST(ResultManagerTest, WritesMachineReadableResults) {
@@ -49,6 +76,8 @@ TEST(ResultManagerTest, WritesMachineReadableResults) {
                              std::istreambuf_iterator<char>()};
   EXPECT_NE(contents.find("\"benchmark_id\": \"integer\""), std::string::npos);
   EXPECT_NE(contents.find("\"validation_status\": \"passed\""), std::string::npos);
+  EXPECT_NE(contents.find("\"execution_model\""), std::string::npos);
+  EXPECT_NE(contents.find("\"worker_count\": 0"), std::string::npos);
   EXPECT_NE(contents.find("\"thread_scaling\""), std::string::npos);
   std::filesystem::remove(path);
 }

@@ -78,6 +78,10 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
   write_escaped_json(output, result.benchmark_version);
   output << ",\n  \"backend\": ";
   write_escaped_json(output, result.backend);
+  output << ",\n  \"execution_model\": {\n    \"version\": 2,\n"
+            "    \"thread_count_semantics\": \"total-execution-participants\",\n"
+            "    \"job_system_single_thread_mode\": \"main-inline\",\n"
+            "    \"job_system_multi_thread_mode\": \"main-plus-workers\"\n  }";
   output << ",\n  \"validation_status\": \"" << top_status << '"' << ",\n  \"configuration\": {\n"
          << "    \"workload\": ";
   write_escaped_json(output, result.config.workload);
@@ -201,7 +205,10 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
     if (run_index != 0) {
       output << ",\n";
     }
-    output << "    {\n      \"thread_count\": " << run.thread_count << ",\n      \"samples_ms\": [";
+    output << "    {\n      \"thread_count\": " << run.thread_count
+           << ",\n      \"worker_count\": " << run.worker_count << ",\n      \"execution_mode\": ";
+    write_escaped_json(output, run.execution_mode);
+    output << ",\n      \"samples_ms\": [";
     for (std::size_t sample_index = 0; sample_index < run.samples_ms.size(); ++sample_index) {
       if (sample_index != 0) {
         output << ", ";
@@ -239,7 +246,8 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
              << ",\n        \"stolen_jobs\": " << run.scheduling->stolen_jobs
              << ",\n        \"main_thread_jobs\": " << run.scheduling->main_thread_jobs
              << ",\n        \"exceptions\": " << run.scheduling->exceptions
-             << ",\n        \"worker_busy_ms\": " << run.scheduling->worker_busy_ms << "\n      }";
+             << ",\n        \"worker_busy_ms\": " << run.scheduling->worker_busy_ms
+             << ",\n        \"sample_scope\": \"last-measured-frame\"\n      }";
     }
     if (run.vulkan) {
       output << ",\n      \"vulkan\": {\n        \"device_name\": ";
@@ -283,7 +291,8 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
 }
 
 void write_csv(const BenchmarkResult& result, std::ostream& output) {
-  output << "benchmark_id,benchmark_version,thread_count,mean_frame_time_ms,"
+  output << "benchmark_id,benchmark_version,thread_count,worker_count,execution_mode,"
+            "mean_frame_time_ms,"
             "median_frame_time_ms,p95_frame_time_ms,p99_frame_time_ms,p99_9_frame_time_ms,"
             "maximum_frame_time_ms,critical_path_time_ms,main_thread_time_ms,"
             "main_thread_cpu_migrations,speedup,efficiency,operations,checksum,"
@@ -293,9 +302,10 @@ void write_csv(const BenchmarkResult& result, std::ostream& output) {
     const auto& run = result.runs[index];
     const auto& scaling = result.thread_scaling[index];
     output << result.benchmark_id << ',' << result.benchmark_version << ',' << run.thread_count
-           << ',' << run.statistics.mean_ms << ',' << run.statistics.median_ms << ','
-           << run.statistics.p95_ms << ',' << run.statistics.p99_ms << ',' << run.statistics.p999_ms
-           << ',' << run.statistics.maximum_ms << ',' << run.critical_path_time_ms << ','
+           << ',' << run.worker_count << ',' << run.execution_mode << ',' << run.statistics.mean_ms
+           << ',' << run.statistics.median_ms << ',' << run.statistics.p95_ms << ','
+           << run.statistics.p99_ms << ',' << run.statistics.p999_ms << ','
+           << run.statistics.maximum_ms << ',' << run.critical_path_time_ms << ','
            << run.main_thread_time_ms << ',' << run.main_thread_cpu_migrations << ','
            << scaling.speedup << ',' << scaling.efficiency << ',' << run.operations << ','
            << run.checksum << ',' << (run.skipped ? "skipped" : (run.valid ? "passed" : "failed"))

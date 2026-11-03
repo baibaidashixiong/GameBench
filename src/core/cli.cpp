@@ -81,7 +81,7 @@ void print_help() {
             << "  --profile <id>           选择单帧合成负载 Profile\n"
             << "                           默认: source2-like + 自动线程梯度\n"
             << "  --suite all              运行全部已实现工作负载\n"
-            << "  --threads <1,2,4>        线程数量列表\n"
+            << "  --threads <1,2,4>        总执行参与者数（含主线程）\n"
             << "  --mode <reproducible|realistic>\n"
             << "  --mode <no-submit|gpu-backed> Vulkan 执行模式\n"
             << "  --scheduler <global-queue|static-partitioning|work-stealing>\n"

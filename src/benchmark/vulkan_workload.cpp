@@ -111,6 +111,7 @@ auto VulkanWorkload::execute(const WorkloadConfig& config) -> WorkloadOutput {
   output.vulkan = VulkanDiagnostics{.device_name = context_->device_name(),
                                     .driver_name = context_->driver_name(),
                                     .api_version = context_->api_version()};
+  set_job_execution_metadata(output, config);
   return output;
 #endif
 }
@@ -124,8 +125,8 @@ void VulkanWorkload::ensure_system(const WorkloadConfig& config) {
   prepared_threads_ = config.thread_count;
   prepared_scheduler_ = config.scheduler;
   system_ = std::make_unique<runtime::JobSystem>(runtime::JobSystemConfig{
-      .worker_count = std::max(1U, config.thread_count - 1U),
-      .main_thread_participates = config.thread_count > 1,
+      .worker_count = job_worker_count(config),
+      .main_thread_participates = config.thread_count > 0,
       .scheduler = config.scheduler,
       .cpu_affinity = worker_affinity(config),
   });

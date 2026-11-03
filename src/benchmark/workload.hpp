@@ -36,6 +36,10 @@ struct WorkloadConfig {
   return {config.cpu_affinity.begin() + 1, config.cpu_affinity.end()};
 }
 
+[[nodiscard]] inline auto job_worker_count(const WorkloadConfig& config) -> unsigned {
+  return config.thread_count == 0 ? 0 : config.thread_count - 1U;
+}
+
 struct SchedulingMetrics {
   std::uint64_t submitted_jobs{};
   std::uint64_t completed_jobs{};
@@ -62,7 +66,14 @@ struct WorkloadOutput {
   std::optional<VulkanDiagnostics> vulkan;
   std::optional<double> measured_time_ms;
   std::string simd_backend;
+  unsigned worker_count{};
+  std::string execution_mode;
 };
+
+inline void set_job_execution_metadata(WorkloadOutput& output, const WorkloadConfig& config) {
+  output.worker_count = job_worker_count(config);
+  output.execution_mode = config.thread_count == 1 ? "main-inline" : "main-plus-workers";
+}
 
 class Workload {
 public:

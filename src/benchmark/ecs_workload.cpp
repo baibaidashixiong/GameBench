@@ -87,6 +87,7 @@ auto EcsWorkload::execute(const WorkloadConfig& config) -> WorkloadOutput {
   if (!output.valid) {
     output.validation_message = "ECS 实体存活数量或组件数据校验失败";
   }
+  set_job_execution_metadata(output, config);
   return output;
 }
 
@@ -99,8 +100,8 @@ void EcsWorkload::ensure_system(const WorkloadConfig& config) {
   prepared_threads_ = config.thread_count;
   prepared_scheduler_ = config.scheduler;
   system_ = std::make_unique<runtime::JobSystem>(runtime::JobSystemConfig{
-      .worker_count = std::max(1U, config.thread_count - 1U),
-      .main_thread_participates = config.thread_count > 1,
+      .worker_count = job_worker_count(config),
+      .main_thread_participates = config.thread_count > 0,
       .scheduler = config.scheduler,
       .cpu_affinity = worker_affinity(config),
   });

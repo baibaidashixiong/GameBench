@@ -64,6 +64,8 @@ gamebench compare result-a.json result-b.json
 
 直接执行 `gamebench run` 会使用固定规模的 `source2-like` Profile v2、自动物理核心线程梯度、60 帧预热和 300 帧采样。需要更短调试运行时可以用 `--warmup 10 --repetitions 30` 显式覆盖。
 
+`--threads` 表示包含主线程在内的总执行参与者。`--threads 1` 不创建 Worker，由主线程通过 Job System 闭环执行全部任务；`--threads 2` 表示主线程加一个 Worker，依此类推。结果 JSON 和 CSV 会记录 `execution_mode` 与 `worker_count`，线程扩展性始终相对这一明确的 1 线程基线计算。
+
 `system-info` 会报告 hwloc 检测出的逻辑处理器、物理核心、SMT、NUMA、缓存、允许 CPU 列表以及可读取的频率和温度。可用 `--cpu-affinity 0,2`、`--physical-core 0` 或 `--numa-node 0` 选择绑定集合。无法可靠识别的 CCD 或 P/E Core 类型会明确显示 `Unknown`。硬件计数器受 `perf_event_open` 权限限制，不可用时结果保留为 `available: false`。
 
 ## 项目状态

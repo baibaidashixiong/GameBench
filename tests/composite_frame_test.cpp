@@ -39,6 +39,8 @@ TEST(CompositeFrameTest, Source2LikeFrameValidatesAndReportsScheduling) {
       profile->audio_sources * profile->audio_buffer_size * 8U;
   EXPECT_GT(output.operations, static_operations);
   EXPECT_FALSE(std::string_view{output.simd_backend}.empty());
+  EXPECT_EQ(output.worker_count, 1U);
+  EXPECT_EQ(output.execution_mode, "main-plus-workers");
   ASSERT_TRUE(output.scheduling.has_value());
   EXPECT_EQ(output.scheduling->submitted_jobs, output.scheduling->completed_jobs);
   EXPECT_GT(output.scheduling->submitted_jobs, 0U);
@@ -54,4 +56,33 @@ TEST(CompositeFrameTest, Source2LikeFrameValidatesAndReportsScheduling) {
     EXPECT_EQ(repeated.scheduling->submitted_jobs, expected_jobs) << "frame " << frame;
     EXPECT_EQ(repeated.scheduling->completed_jobs, expected_jobs) << "frame " << frame;
   }
+}
+
+TEST(CompositeFrameTest, SingleThreadIsMainInline) {
+  auto workload = gamebench::benchmark::WorkloadRegistry::create_default().create("game-frame");
+  ASSERT_NE(workload, nullptr);
+  const gamebench::benchmark::WorkloadConfig config{
+      .profile_id = "source2-like",
+      .thread_count = 1,
+      .seed = 42,
+      .objects = 0,
+      .iterations = 1,
+      .scheduler = gamebench::core::SchedulerKind::WorkStealing,
+      .layout = gamebench::core::DataLayout::SoA,
+      .memory_pattern = gamebench::core::MemoryPattern::Sequential,
+      .working_set_bytes = 0,
+      .vulkan_mode = gamebench::core::VulkanMode::NoSubmit,
+      .audio_buffer_size = 512,
+      .sample_rate = 48000,
+      .cpu_affinity = {},
+      .enable_vulkan = false,
+  };
+
+  const auto output = workload->execute(config);
+  ASSERT_TRUE(output.valid);
+  ASSERT_TRUE(output.scheduling.has_value());
+  EXPECT_EQ(output.worker_count, 0U);
+  EXPECT_EQ(output.execution_mode, "main-inline");
+  EXPECT_EQ(output.scheduling->main_thread_jobs, output.scheduling->submitted_jobs);
+  EXPECT_EQ(output.scheduling->worker_busy_ms, 0.0);
 }

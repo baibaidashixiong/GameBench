@@ -82,12 +82,14 @@ void JobHandle::rethrow_if_failed() const {
 
 JobSystem::JobSystem(JobSystemConfig config)
     : config_(std::move(config)), statistics_(std::make_unique<StatisticsState>()) {
-  if (config_.worker_count == 0) {
-    throw std::invalid_argument("JobSystem 至少需要一个 Worker 或使用主线程后参与模式");
+  if (config_.worker_count == 0 && !config_.main_thread_participates) {
+    throw std::invalid_argument("JobSystem 至少需要一个执行参与者");
   }
-  local_queues_.reserve(config_.worker_count);
+  // 零 Worker 模式仍保留一个等待队列，由主线程在 wait()/shutdown() 中消费。
+  const auto queue_count = std::max(1U, config_.worker_count);
+  local_queues_.reserve(queue_count);
   statistics_->worker_busy_ms.resize(config_.worker_count, 0.0);
-  for (unsigned index = 0; index < config_.worker_count; ++index) {
+  for (unsigned index = 0; index < queue_count; ++index) {
     local_queues_.push_back(std::make_unique<WorkerQueue>());
   }
   workers_.reserve(config_.worker_count);
