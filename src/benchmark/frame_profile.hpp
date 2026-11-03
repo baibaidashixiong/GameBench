@@ -14,6 +14,7 @@ struct FrameProfile {
   std::string version;
   std::string description;
   std::size_t ecs_entities{};
+  unsigned scene_sets{};
   std::size_t scene_objects{};
   unsigned scene_views{};
   std::size_t physics_bodies{};
@@ -21,6 +22,8 @@ struct FrameProfile {
   std::size_t animation_skeletons{};
   std::size_t bones_per_skeleton{};
   std::size_t ai_agents{};
+  std::size_t simd_particles{};
+  unsigned simd_steps{};
   std::size_t audio_sources{};
   std::uint32_t audio_buffer_size{};
   std::uint32_t sample_rate{};

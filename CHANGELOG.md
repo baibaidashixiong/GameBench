@@ -41,4 +41,8 @@
 - 修复连续帧中 Scheduler 和 Game Frame 的统计基线，避免提交数与 Worker 忙碌时间跨帧累计。
 - 简化默认命令：直接执行 `gamebench run` 会运行固定规模的 Source 2-like Profile，并自动生成物理核心线程梯度。
 - 撤回 Source 2-like 负载波动模型，恢复所有帧使用固定 Profile 规模。
+- 将 Source 2-like Profile 与 `game-frame` 升级到 v2，扩大 ECS、Physics、Animation、AI、Audio 和 Vulkan 固定规模。
+- 增加三个独立 Scene 集合及 131072 粒子、每帧 8 步的 SSE2 粒子阶段，并在结果中记录 SIMD 后端。
+- 增加 SIMD 粒子确定性、种子和时间步测试，并在无 SSE2 架构上保留标量回退。
+- 将无参数默认运行调整为 60 帧预热和 300 帧采样，提高固定负载统计的稳定时间。
 

@@ -33,6 +33,7 @@ struct BenchmarkRun {
   std::vector<std::string> warnings;
   std::optional<benchmark::SchedulingMetrics> scheduling;
   std::optional<benchmark::VulkanDiagnostics> vulkan;
+  std::string simd_backend;
 };
 
 struct ThreadScaling {

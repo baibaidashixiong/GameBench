@@ -94,3 +94,9 @@
 - 结果比较、CSV 导出和可视化工具。
 - 完整可复现实验手册、发布包和版本化评分说明。
 
+## 里程碑 10：Source 2-like 单帧 Profile
+
+- 使用版本化 Profile 组合 ECS、Scene、Physics、Animation、AI、SIMD、Audio 与 Vulkan CPU 阶段。
+- Profile v2 使用固定规模的三组 Scene 和 SSE2 粒子任务，扩大缓存压力与指令数量但不注入人工帧时间波动。
+- 每份结果记录 Profile 版本、SIMD 后端、固定操作数、原始样本、分位数和校验状态；v1 与 v2 结果分别比较。
+

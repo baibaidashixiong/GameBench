@@ -72,6 +72,7 @@ add_library(gamebench_core STATIC
   src/simulation/navigation.cpp
   src/simulation/physics.cpp
   src/simulation/scene.cpp
+  src/simulation/simd_particles.cpp
 )
 target_include_directories(gamebench_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(gamebench_core PUBLIC Threads::Threads gamebench_warnings)
@@ -117,6 +118,7 @@ if(GAMEBENCH_BUILD_TESTS)
     tests/timing_test.cpp
     tests/runner_test.cpp
     tests/scene_test.cpp
+    tests/simd_particles_test.cpp
     tests/scoring_test.cpp
     tests/job_system_test.cpp
     tests/workload_test.cpp

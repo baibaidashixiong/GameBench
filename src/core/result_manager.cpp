@@ -110,6 +110,7 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
     output << ",\n    \"version\": ";
     write_escaped_json(output, profile.version);
     output << ",\n    \"ecs_entities\": " << profile.ecs_entities
+           << ",\n    \"scene_sets\": " << profile.scene_sets
            << ",\n    \"scene_objects\": " << profile.scene_objects
            << ",\n    \"scene_views\": " << profile.scene_views
            << ",\n    \"physics_bodies\": " << profile.physics_bodies
@@ -117,6 +118,8 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
            << ",\n    \"animation_skeletons\": " << profile.animation_skeletons
            << ",\n    \"bones_per_skeleton\": " << profile.bones_per_skeleton
            << ",\n    \"ai_agents\": " << profile.ai_agents
+           << ",\n    \"simd_particles\": " << profile.simd_particles
+           << ",\n    \"simd_steps\": " << profile.simd_steps
            << ",\n    \"audio_sources\": " << profile.audio_sources
            << ",\n    \"audio_buffer_size\": " << profile.audio_buffer_size
            << ",\n    \"sample_rate\": " << profile.sample_rate
@@ -244,6 +247,10 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
       output << ",\n        \"driver_name\": ";
       write_escaped_json(output, run.vulkan->driver_name);
       output << ",\n        \"api_version\": " << run.vulkan->api_version << "\n      }";
+    }
+    if (!run.simd_backend.empty()) {
+      output << ",\n      \"simd_backend\": ";
+      write_escaped_json(output, run.simd_backend);
     }
     output << "\n    }";
   }

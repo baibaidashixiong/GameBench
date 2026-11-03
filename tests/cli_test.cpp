@@ -71,6 +71,6 @@ TEST(CliTest, UsesSource2LikeDefaults) {
   EXPECT_EQ(config.workload, "game-frame");
   EXPECT_EQ(config.profile, "source2-like");
   EXPECT_TRUE(config.thread_counts.empty());
-  EXPECT_EQ(config.warmup_iterations, 30U);
-  EXPECT_EQ(config.repetitions, 100U);
+  EXPECT_EQ(config.warmup_iterations, 60U);
+  EXPECT_EQ(config.repetitions, 300U);
 }

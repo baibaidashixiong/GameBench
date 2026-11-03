@@ -1,7 +1,10 @@
+#include "benchmark/frame_profile.hpp"
 #include "benchmark/registry.hpp"
 #include "benchmark/workload.hpp"
 
 #include <gtest/gtest.h>
+
+#include <string_view>
 
 TEST(CompositeFrameTest, Source2LikeFrameValidatesAndReportsScheduling) {
   auto workload = gamebench::benchmark::WorkloadRegistry::create_default().create("game-frame");
@@ -26,7 +29,16 @@ TEST(CompositeFrameTest, Source2LikeFrameValidatesAndReportsScheduling) {
   const auto output = workload->execute(config);
   EXPECT_TRUE(output.valid);
   EXPECT_GT(output.checksum, 0U);
-  EXPECT_GT(output.operations, 0U);
+  const auto profile = gamebench::benchmark::find_frame_profile("source2-like");
+  ASSERT_TRUE(profile.has_value());
+  const auto static_operations =
+      profile->ecs_entities + profile->physics_bodies * profile->physics_substeps +
+      profile->animation_skeletons * profile->bones_per_skeleton + profile->ai_agents +
+      profile->scene_objects * profile->scene_sets * profile->scene_views +
+      profile->simd_particles * profile->simd_steps +
+      profile->audio_sources * profile->audio_buffer_size * 8U;
+  EXPECT_GT(output.operations, static_operations);
+  EXPECT_FALSE(std::string_view{output.simd_backend}.empty());
   ASSERT_TRUE(output.scheduling.has_value());
   EXPECT_EQ(output.scheduling->submitted_jobs, output.scheduling->completed_jobs);
   EXPECT_GT(output.scheduling->submitted_jobs, 0U);

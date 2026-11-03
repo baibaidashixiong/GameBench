@@ -76,7 +76,7 @@ auto WorkloadRegistry::create_default() -> WorkloadRegistry {
                [] { return std::make_unique<AiWorkload>(); });
   registry.add({"audio", "1", "synthetic", "FIR、重采样、Reverb 与 Stereo Mixing"},
                [] { return std::make_unique<AudioWorkload>(); });
-  registry.add({"game-frame", "1", "engine-like", "版本化 Profile 驱动的单帧 Synthetic CPU 负载"},
+  registry.add({"game-frame", "2", "engine-like", "版本化 Profile 驱动的单帧 Synthetic CPU 负载"},
                [] { return std::make_unique<CompositeFrameWorkload>(); });
   return registry;
 }

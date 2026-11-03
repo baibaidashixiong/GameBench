@@ -51,7 +51,7 @@ hwloc 提供 CPU 拓扑与缓存层次，sysfs 提供 Governor、频率和可选
 
 ## Source 2-like 单帧负载
 
-`game-frame` 工作负载读取版本化 `FrameProfile`，为各阶段配置独立规模。Physics 子步通过依赖链建立屏障；Scene 汇总、Audio Mixing、Render Preparation 和 Vulkan 录制按任务依赖执行；最后以单一校验任务等待整个帧完成。该负载用于测试 CPU 调度与现代游戏帧工作组成，不代表真实 Source 2 或 CS2 成绩。
+`game-frame` 工作负载读取版本化 `FrameProfile`，为各阶段配置独立规模。三个 Scene 集合分别执行 BVH 查询；SSE2 粒子阶段按固定块并行更新并在不支持 SSE2 的架构上回退到标量代码。Physics 子步通过依赖链建立屏障；Scene 汇总、Audio Mixing、Render Preparation 和 Vulkan 录制按任务依赖执行；最后以单一校验任务等待整个帧完成。该负载用于测试 CPU 调度与现代游戏帧工作组成，不代表真实 Source 2 或 CS2 成绩。
 
 ## 可复现性
 

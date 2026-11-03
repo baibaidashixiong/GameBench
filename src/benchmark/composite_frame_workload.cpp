@@ -8,6 +8,7 @@
 #include "simulation/navigation.hpp"
 #include "simulation/physics.hpp"
 #include "simulation/scene.hpp"
+#include "simulation/simd_particles.hpp"
 
 #if defined(GAMEBENCH_HAS_VULKAN)
 #include "renderer/vulkan_context.hpp"
@@ -63,7 +64,8 @@ struct CompositeFrameWorkload::Impl {
   std::unique_ptr<runtime::JobSystem> jobs;
   std::unique_ptr<simulation::EcsWorld> ecs;
   std::unique_ptr<simulation::PhysicsWorld> physics;
-  std::unique_ptr<simulation::Scene> scene;
+  std::vector<std::unique_ptr<simulation::Scene>> scenes;
+  std::unique_ptr<simulation::SimdParticleSystem> simd_particles;
   std::unique_ptr<simulation::NavigationGrid> navigation;
 #if defined(GAMEBENCH_HAS_VULKAN)
   std::unique_ptr<renderer::VulkanContext> vulkan;
@@ -80,10 +82,11 @@ void CompositeFrameWorkload::Impl::ensure(const WorkloadConfig& config) {
   if (!selected) {
     throw std::invalid_argument("未知 Frame Profile: " + config.profile_id);
   }
-  if (selected->ecs_entities == 0 || selected->scene_objects == 0 || selected->scene_views == 0 ||
-      selected->physics_bodies == 0 || selected->physics_substeps == 0 ||
-      selected->animation_skeletons == 0 || selected->bones_per_skeleton == 0 ||
-      selected->ai_agents == 0 || selected->audio_sources == 0 ||
+  if (selected->ecs_entities == 0 || selected->scene_sets == 0 || selected->scene_objects == 0 ||
+      selected->scene_views == 0 || selected->physics_bodies == 0 ||
+      selected->physics_substeps == 0 || selected->animation_skeletons == 0 ||
+      selected->bones_per_skeleton == 0 || selected->ai_agents == 0 ||
+      selected->simd_particles == 0 || selected->simd_steps == 0 || selected->audio_sources == 0 ||
       selected->audio_buffer_size == 0 || selected->sample_rate == 0 ||
       selected->vulkan_tasks == 0 || selected->vulkan_commands_per_task == 0) {
     throw std::invalid_argument("Frame Profile 包含无效的零规模参数");
@@ -109,7 +112,14 @@ void CompositeFrameWorkload::Impl::ensure(const WorkloadConfig& config) {
     (void)ecs->create_entity();
   }
   physics = std::make_unique<simulation::PhysicsWorld>(profile.physics_bodies, 0x5eed);
-  scene = std::make_unique<simulation::Scene>(profile.scene_objects, 0x5eed);
+  scenes.clear();
+  scenes.reserve(profile.scene_sets);
+  for (unsigned scene_set = 0; scene_set < profile.scene_sets; ++scene_set) {
+    scenes.push_back(std::make_unique<simulation::Scene>(
+        profile.scene_objects,
+        0x5eedULL + static_cast<std::uint64_t>(scene_set) * 0x9e3779b97f4a7c15ULL));
+  }
+  simd_particles = std::make_unique<simulation::SimdParticleSystem>(profile.simd_particles, 0x5eed);
   navigation = std::make_unique<simulation::NavigationGrid>(64, 64, 0x5eed);
   jobs = std::make_unique<runtime::JobSystem>(runtime::JobSystemConfig{
       .worker_count = std::max(1U, config.thread_count - 1U),
@@ -147,8 +157,10 @@ auto CompositeFrameWorkload::Impl::schedule(const WorkloadConfig& config) -> Wor
   std::vector<std::uint64_t> animation_checksums(profile.animation_skeletons, 0);
   std::vector<std::uint64_t> ai_checksums(profile.ai_agents, 0);
   std::vector<std::uint64_t> ai_path_lengths(profile.ai_agents, 0);
-  std::vector<std::uint64_t> scene_checksums(profile.scene_views, 0);
-  std::vector<std::uint64_t> scene_visible(profile.scene_views, 0);
+  const auto scene_view_count = static_cast<std::size_t>(profile.scene_sets) * profile.scene_views;
+  std::vector<std::uint64_t> scene_checksums(scene_view_count, 0);
+  std::vector<std::uint64_t> scene_visible(scene_view_count, 0);
+  std::vector<std::uint64_t> simd_checksums;
   std::vector<std::vector<audio::StereoFrame>> audio_sources(profile.audio_sources);
   std::vector<audio::StereoFrame> mixed_audio;
   std::vector<std::uint64_t> vulkan_checksums;
@@ -234,16 +246,36 @@ auto CompositeFrameWorkload::Impl::schedule(const WorkloadConfig& config) -> Wor
   completion_dependencies.insert(completion_dependencies.end(), ai_handles.begin(),
                                  ai_handles.end());
 
-  std::vector<runtime::JobHandle> scene_handles;
-  for (unsigned view = 0; view < profile.scene_views; ++view) {
-    scene_handles.push_back(jobs->submit([&, view] {
-      auto frustum = simulation::Frustum::perspective(1.0F, 100.0F, 0.7002075F);
-      frustum = frustum.translated({static_cast<float>(view % 8U) * 4.0F - 16.0F,
-                                    static_cast<float>(view / 8U) * 4.0F - 8.0F, 0.0F});
-      const auto query = scene->process_view(frustum, seed + view);
-      scene_checksums[view] = query.checksum;
-      scene_visible[view] = query.visible_objects;
+  const auto simd_tasks = chunk_count(simd_particles->block_count(), config.thread_count);
+  const auto simd_chunk = (simd_particles->block_count() + simd_tasks - 1U) / simd_tasks;
+  simd_checksums.resize(simd_tasks, 0);
+  std::vector<runtime::JobHandle> simd_handles;
+  simd_handles.reserve(simd_tasks);
+  for (std::size_t task = 0; task < simd_tasks; ++task) {
+    const auto begin = task * simd_chunk;
+    const auto end = std::min(simd_particles->block_count(), begin + simd_chunk);
+    simd_handles.push_back(jobs->submit([&, task, begin, end] {
+      simd_particles->update(begin, end, profile.simd_steps, 1.0F / 120.0F);
+      simd_checksums[task] = simd_particles->checksum(begin, end);
     }));
+  }
+  completion_dependencies.insert(completion_dependencies.end(), simd_handles.begin(),
+                                 simd_handles.end());
+
+  std::vector<runtime::JobHandle> scene_handles;
+  scene_handles.reserve(scene_view_count);
+  for (unsigned scene_set = 0; scene_set < profile.scene_sets; ++scene_set) {
+    for (unsigned view = 0; view < profile.scene_views; ++view) {
+      const auto scene_index = static_cast<std::size_t>(scene_set) * profile.scene_views + view;
+      scene_handles.push_back(jobs->submit([&, scene_set, view, scene_index] {
+        auto frustum = simulation::Frustum::perspective(1.0F, 100.0F, 0.7002075F);
+        frustum = frustum.translated({static_cast<float>(view % 8U) * 4.0F - 16.0F,
+                                      static_cast<float>(view / 8U) * 4.0F - 8.0F, 0.0F});
+        const auto query = scenes[scene_set]->process_view(frustum, seed + scene_index);
+        scene_checksums[scene_index] = query.checksum;
+        scene_visible[scene_index] = query.visible_objects;
+      }));
+    }
   }
   completion_dependencies.insert(completion_dependencies.end(), scene_handles.begin(),
                                  scene_handles.end());
@@ -307,12 +339,17 @@ auto CompositeFrameWorkload::Impl::schedule(const WorkloadConfig& config) -> Wor
   auto final_job = jobs->submit(
       [&] {
         const auto collisions = physics->collect_collisions();
-        phases_valid = phases_valid && collisions.contact_pairs <= collisions.broad_phase_pairs &&
-                       ecs->alive_count() == profile.ecs_entities && !mixed_audio.empty();
+        phases_valid =
+            phases_valid && collisions.contact_pairs <= collisions.broad_phase_pairs &&
+            ecs->alive_count() == profile.ecs_entities && scenes.size() == profile.scene_sets &&
+            simd_particles->block_count() == (profile.simd_particles + 3U) / 4U &&
+            std::ranges::all_of(simd_checksums, [](std::uint64_t value) { return value != 0; }) &&
+            !mixed_audio.empty();
         final_checksum = mix64(seed);
         final_checksum = combine(final_checksum, ecs_checksums);
         final_checksum = combine(final_checksum, animation_checksums);
         final_checksum = combine(final_checksum, ai_checksums);
+        final_checksum = combine(final_checksum, simd_checksums);
         final_checksum = mix64(final_checksum ^ render_checksum);
         final_checksum = mix64(final_checksum ^ collisions.broad_phase_pairs ^
                                (collisions.contact_pairs << 16U));
@@ -325,7 +362,8 @@ auto CompositeFrameWorkload::Impl::schedule(const WorkloadConfig& config) -> Wor
             profile.ecs_entities + profile.physics_bodies * profile.physics_substeps +
             profile.animation_skeletons * profile.bones_per_skeleton + profile.ai_agents +
             std::accumulate(ai_path_lengths.begin(), ai_path_lengths.end(), std::uint64_t{0}) +
-            profile.scene_objects * profile.scene_views +
+            profile.scene_objects * profile.scene_sets * profile.scene_views +
+            profile.simd_particles * profile.simd_steps +
             profile.audio_sources * profile.audio_buffer_size * 8U +
             (vulkan_diagnostics ? profile.vulkan_tasks * profile.vulkan_commands_per_task : 0U);
       },
@@ -343,6 +381,7 @@ auto CompositeFrameWorkload::Impl::schedule(const WorkloadConfig& config) -> Wor
     output.warnings.push_back(vulkan_warning);
   }
   output.vulkan = vulkan_diagnostics;
+  output.simd_backend = simulation::simd_backend_name();
   const auto current = jobs->statistics();
   const runtime::SchedulerStatistics empty_statistics;
   const auto& previous = previous_cumulative.value_or(empty_statistics);
@@ -366,7 +405,7 @@ auto CompositeFrameWorkload::id() const -> std::string_view {
   return "game-frame";
 }
 auto CompositeFrameWorkload::version() const -> std::string_view {
-  return "1";
+  return "2";
 }
 auto CompositeFrameWorkload::category() const -> std::string_view {
   return "engine-like";

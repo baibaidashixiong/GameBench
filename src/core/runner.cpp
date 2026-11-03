@@ -38,6 +38,9 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
     if (output.vulkan) {
       run.vulkan = output.vulkan;
     }
+    if (!output.simd_backend.empty()) {
+      run.simd_backend = output.simd_backend;
+    }
     if (!output.warnings.empty()) {
       run.warnings = output.warnings;
     }

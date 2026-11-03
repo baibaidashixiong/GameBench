@@ -32,8 +32,8 @@ struct RunConfig {
   std::uint64_t seed{1337};
   std::uint64_t objects{65536};
   std::uint64_t iterations{1};
-  std::uint64_t warmup_iterations{30};
-  std::uint64_t repetitions{100};
+  std::uint64_t warmup_iterations{60};
+  std::uint64_t repetitions{300};
   std::uint64_t working_set_bytes{16ULL * 1024ULL * 1024ULL};
   ExportFormat format{ExportFormat::Json};
   std::filesystem::path output_path;
