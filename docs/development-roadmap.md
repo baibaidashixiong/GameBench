@@ -13,7 +13,7 @@
 | 里程碑 | 内容 | 状态 |
 | --- | --- | --- |
 | 0 | 项目基础设施、构建、测试、文档 | 已完成 |
-| 1 | Core Runtime、JSON、CLI、基础 Runner | 计划中 |
+| 1 | Core Runtime、JSON、CLI、基础 Runner | 已完成 |
 | 2 | Job System、依赖、三种调度模式 | 计划中 |
 | 3 | ECS 与 Memory Workload | 计划中 |
 | 4 | Scene Processing | 计划中 |

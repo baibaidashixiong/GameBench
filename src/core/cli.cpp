@@ -1,0 +1,323 @@
+#include "core/cli.hpp"
+
+#include "benchmark/registry.hpp"
+#include "core/logger.hpp"
+#include "core/result_manager.hpp"
+#include "core/result_reader.hpp"
+#include "core/runner.hpp"
+#include "core/version.hpp"
+#include "platform/system_info.hpp"
+
+#include <algorithm>
+#include <charconv>
+#include <cstdlib>
+#include <exception>
+#include <filesystem>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+namespace gamebench::core {
+namespace {
+
+template <typename Integer>
+[[nodiscard]] auto parse_integer(std::string_view text, std::string_view option) -> Integer {
+  Integer value{};
+  const auto result = std::from_chars(text.data(), text.data() + text.size(), value);
+  if (result.ec != std::errc{} || result.ptr != text.data() + text.size()) {
+    throw std::invalid_argument("参数 " + std::string{option} + " 的值无效: " +
+                                std::string{text});
+  }
+  return value;
+}
+
+[[nodiscard]] auto parse_threads(std::string_view text) -> std::vector<unsigned> {
+  std::vector<unsigned> threads;
+  std::size_t start = 0;
+  while (start <= text.size()) {
+    const auto comma = text.find(',', start);
+    const auto end = comma == std::string_view::npos ? text.size() : comma;
+    const auto token = text.substr(start, end - start);
+    if (token.empty()) {
+      throw std::invalid_argument("--threads 包含空值");
+    }
+    threads.push_back(parse_integer<unsigned>(token, "--threads"));
+    if (comma == std::string_view::npos) {
+      break;
+    }
+    start = comma + 1;
+  }
+  return threads;
+}
+
+[[nodiscard]] auto option_value(std::span<const std::string_view> arguments,
+                                std::size_t& index) -> std::string_view {
+  if (index + 1 >= arguments.size()) {
+    throw std::invalid_argument("参数 " + std::string{arguments[index]} + " 缺少值");
+  }
+  ++index;
+  return arguments[index];
+}
+
+void print_help() {
+  std::cout << "GameBench " << kVersion << "\n"
+            << "面向 Linux 的游戏引擎 CPU 性能测试平台\n\n"
+            << "用法:\n"
+            << "  gamebench run [选项]\n"
+            << "  gamebench list\n"
+            << "  gamebench system-info\n"
+            << "  gamebench compare <基准结果.json> <对比结果.json>\n"
+            << "  gamebench --version\n\n"
+            << "run 选项:\n"
+            << "  --workload <id>          工作负载 ID\n"
+            << "  --suite all              运行全部已实现工作负载\n"
+            << "  --threads <1,2,4>        线程数量列表\n"
+            << "  --mode <reproducible|realistic>\n"
+            << "  --scheduler <global-queue|static-partitioning|work-stealing>\n"
+            << "  --seed <整数>            固定随机种子\n"
+            << "  --objects <数量>         工作负载规模\n"
+            << "  --iterations <数量>      每个样本内的工作负载迭代数\n"
+            << "  --warmup <数量>          预热迭代数\n"
+            << "  --repetitions <数量>     采样重复数\n"
+            << "  --format <json|csv>      输出格式\n"
+            << "  --output <路径>          输出文件\n";
+}
+
+[[nodiscard]] auto parse_mode(std::string_view value) -> RunMode {
+  if (value == "reproducible") {
+    return RunMode::Reproducible;
+  }
+  if (value == "realistic") {
+    return RunMode::Realistic;
+  }
+  throw std::invalid_argument("--mode 仅支持 reproducible 或 realistic");
+}
+
+[[nodiscard]] auto parse_scheduler(std::string_view value) -> SchedulerKind {
+  if (value == "global-queue") {
+    return SchedulerKind::GlobalQueue;
+  }
+  if (value == "static-partitioning") {
+    return SchedulerKind::StaticPartitioning;
+  }
+  if (value == "work-stealing") {
+    return SchedulerKind::WorkStealing;
+  }
+  throw std::invalid_argument("--scheduler 的值无效");
+}
+
+[[nodiscard]] auto parse_format(std::string_view value) -> ExportFormat {
+  if (value == "json") {
+    return ExportFormat::Json;
+  }
+  if (value == "csv") {
+    return ExportFormat::Csv;
+  }
+  throw std::invalid_argument("--format 仅支持 json 或 csv");
+}
+
+void print_system_info() {
+  const auto info = platform::collect_system_info();
+  std::cout << "CPU 厂商: " << info.cpu_vendor << '\n'
+            << "CPU 型号: " << info.cpu_model << '\n'
+            << "逻辑处理器: " << info.logical_processors << '\n'
+            << "操作系统: " << info.operating_system << '\n'
+            << "内核: " << info.kernel_release << '\n'
+            << "编译器: " << info.compiler << ' ' << info.compiler_version << '\n'
+            << "构建类型: " << info.build_type << '\n'
+            << "CPU Governor: " << info.cpu_governor << '\n';
+}
+
+void print_workloads(const benchmark::WorkloadRegistry& registry) {
+  std::cout << std::left << std::setw(18) << "ID" << std::setw(10) << "版本"
+            << std::setw(14) << "类别" << "说明\n";
+  for (const auto& descriptor : registry.descriptors()) {
+    std::cout << std::left << std::setw(18) << descriptor.id << std::setw(10)
+              << descriptor.version << std::setw(14) << descriptor.category << descriptor.description
+              << '\n';
+  }
+}
+
+void print_result(const BenchmarkResult& result, const std::filesystem::path& output) {
+  std::cout << "工作负载: " << result.benchmark_id << '\n';
+  for (const auto& run : result.runs) {
+    std::cout << "  线程 " << run.thread_count << ": 中位 " << std::fixed << std::setprecision(3)
+              << run.statistics.median_ms << " ms, P99 " << run.statistics.p99_ms << " ms, 校验 "
+              << (run.valid ? "通过" : "失败") << '\n';
+  }
+  std::cout << "结果: " << output << '\n';
+}
+
+[[nodiscard]] auto find_median(const ResultSummary& summary, unsigned threads) -> double {
+  const auto match = std::ranges::find_if(summary.median_by_thread_count,
+                                          [threads](const auto& item) {
+                                            return item.first == threads;
+                                          });
+  if (match == summary.median_by_thread_count.end()) {
+    throw std::runtime_error("结果缺少线程数 " + std::to_string(threads) + " 的样本");
+  }
+  return match->second;
+}
+
+auto compare_results(const std::filesystem::path& baseline_path,
+                     const std::filesystem::path& candidate_path) -> int {
+  const auto baseline = read_result_summary(baseline_path);
+  const auto candidate = read_result_summary(candidate_path);
+  if (baseline.benchmark_id != candidate.benchmark_id) {
+    throw std::runtime_error("不能比较不同工作负载的结果");
+  }
+  if (!baseline.valid || !candidate.valid) {
+    throw std::runtime_error("不能比较未通过校验的结果");
+  }
+
+  std::cout << "工作负载: " << baseline.benchmark_id << '\n'
+            << std::right << std::setw(10) << "线程" << std::setw(18) << "基准中位(ms)"
+            << std::setw(18) << "对比中位(ms)" << std::setw(16) << "相对吞吐" << '\n';
+  std::cout << std::fixed << std::setprecision(3);
+  for (const auto& [threads, baseline_median] : baseline.median_by_thread_count) {
+    const auto candidate_median = find_median(candidate, threads);
+    const auto relative = baseline_median / candidate_median;
+    std::cout << std::right << std::setw(10) << threads << std::setw(18) << baseline_median
+              << std::setw(18) << candidate_median << std::setw(15) << relative << "x\n";
+  }
+  return EXIT_SUCCESS;
+}
+
+auto run_command(std::span<const std::string_view> arguments) -> int {
+  const auto config = parse_run_config(arguments);
+  const auto registry = benchmark::WorkloadRegistry::create_default();
+
+  std::vector<std::string> workload_ids;
+  if (config.suite_all) {
+    for (const auto& descriptor : registry.descriptors()) {
+      workload_ids.push_back(descriptor.id);
+    }
+  } else {
+    workload_ids.push_back(config.workload);
+  }
+
+  if (!config.output_path.empty() && workload_ids.size() != 1) {
+    throw std::invalid_argument("--suite all 不支持单一 --output 路径");
+  }
+
+  for (const auto& workload_id : workload_ids) {
+    auto workload = registry.create(workload_id);
+    if (!workload) {
+      throw std::invalid_argument("未知工作负载: " + workload_id + "，使用 list 查看可用项");
+    }
+
+    std::cout << "运行 " << workload_id << "，线程数 ";
+    for (std::size_t index = 0; index < config.thread_counts.size(); ++index) {
+      if (index != 0) {
+        std::cout << ',';
+      }
+      std::cout << config.thread_counts[index];
+    }
+    std::cout << " ...\n";
+
+    auto workload_config = config;
+    workload_config.workload = workload_id;
+    const auto result = BenchmarkRunner{}.run(*workload, workload_config);
+    const auto output = workload_config.output_path.empty()
+                            ? ResultManager::default_output_path(result, workload_config.format)
+                            : workload_config.output_path;
+    ResultManager::write(result, output, workload_config.format);
+    print_result(result, output);
+    if (!result.valid) {
+      return EXIT_FAILURE;
+    }
+  }
+  return EXIT_SUCCESS;
+}
+
+} // namespace
+
+auto parse_run_config(std::span<const std::string_view> arguments) -> RunConfig {
+  RunConfig config;
+  for (std::size_t index = 0; index < arguments.size(); ++index) {
+    const auto option = arguments[index];
+    if (option == "--workload") {
+      config.workload = option_value(arguments, index);
+      config.suite_all = false;
+    } else if (option == "--suite") {
+      const auto suite = option_value(arguments, index);
+      if (suite != "all") {
+        throw std::invalid_argument("--suite 当前仅支持 all");
+      }
+      config.suite_all = true;
+    } else if (option == "--threads") {
+      config.thread_counts = parse_threads(option_value(arguments, index));
+    } else if (option == "--mode") {
+      config.mode = parse_mode(option_value(arguments, index));
+    } else if (option == "--scheduler") {
+      config.scheduler = parse_scheduler(option_value(arguments, index));
+    } else if (option == "--seed") {
+      config.seed = parse_integer<std::uint64_t>(option_value(arguments, index), option);
+    } else if (option == "--objects") {
+      config.objects = parse_integer<std::uint64_t>(option_value(arguments, index), option);
+    } else if (option == "--iterations") {
+      config.iterations = parse_integer<std::uint64_t>(option_value(arguments, index), option);
+    } else if (option == "--warmup") {
+      config.warmup_iterations =
+          parse_integer<std::uint64_t>(option_value(arguments, index), option);
+    } else if (option == "--repetitions") {
+      config.repetitions = parse_integer<std::uint64_t>(option_value(arguments, index), option);
+    } else if (option == "--format") {
+      config.format = parse_format(option_value(arguments, index));
+    } else if (option == "--output") {
+      config.output_path = std::filesystem::path{std::string{option_value(arguments, index)}};
+    } else {
+      throw std::invalid_argument("未知 run 参数: " + std::string{option});
+    }
+  }
+  return config;
+}
+
+auto CliApplication::run(std::span<const std::string_view> arguments) const -> int {
+  try {
+    if (arguments.empty()) {
+      print_help();
+      return EXIT_SUCCESS;
+    }
+
+    const auto command = arguments.front();
+    const auto rest = arguments.subspan(1);
+    if (command == "--help" || command == "-h" || command == "help") {
+      print_help();
+      return EXIT_SUCCESS;
+    }
+    if (command == "--version" || command == "-V") {
+      std::cout << kProjectName << ' ' << kVersion << '\n';
+      return EXIT_SUCCESS;
+    }
+    if (command == "run") {
+      return run_command(rest);
+    }
+    if (command == "list") {
+      print_workloads(benchmark::WorkloadRegistry::create_default());
+      return EXIT_SUCCESS;
+    }
+    if (command == "system-info") {
+      print_system_info();
+      return EXIT_SUCCESS;
+    }
+    if (command == "compare") {
+      if (rest.size() != 2) {
+        throw std::invalid_argument("compare 需要两个 JSON 结果文件路径");
+      }
+      return compare_results(rest[0], rest[1]);
+    }
+
+    throw std::invalid_argument("未知命令: " + std::string{command});
+  } catch (const std::exception& exception) {
+    std::cerr << "错误: " << exception.what() << '\n';
+    return EXIT_FAILURE;
+  }
+}
+
+} // namespace gamebench::core
+

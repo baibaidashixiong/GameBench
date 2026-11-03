@@ -29,7 +29,16 @@ target_compile_options(
 find_package(Threads REQUIRED)
 
 add_library(gamebench_core STATIC
+  src/benchmark/integer_workload.cpp
+  src/benchmark/registry.cpp
+  src/core/cli.cpp
+  src/core/config.cpp
   src/core/logger.cpp
+  src/core/result_manager.cpp
+  src/core/result_reader.cpp
+  src/core/runner.cpp
+  src/core/timing.cpp
+  src/platform/system_info.cpp
 )
 target_include_directories(gamebench_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(gamebench_core PUBLIC Threads::Threads gamebench_warnings)
@@ -42,7 +51,11 @@ if(GAMEBENCH_BUILD_TESTS)
   include(GoogleTest)
 
   add_executable(gamebench_tests
+    tests/cli_test.cpp
     tests/smoke_test.cpp
+    tests/timing_test.cpp
+    tests/runner_test.cpp
+    tests/workload_test.cpp
   )
   target_link_libraries(gamebench_tests PRIVATE gamebench_core GTest::gtest_main)
   gtest_discover_tests(gamebench_tests)
