@@ -13,4 +13,3 @@ auto main(int argc, char** argv) -> int {
   }
   return gamebench::core::CliApplication{}.run(arguments);
 }
-

@@ -24,13 +24,12 @@
 namespace gamebench::core {
 namespace {
 
-template <typename Integer>
+template<typename Integer>
 [[nodiscard]] auto parse_integer(std::string_view text, std::string_view option) -> Integer {
   Integer value{};
   const auto result = std::from_chars(text.data(), text.data() + text.size(), value);
   if (result.ec != std::errc{} || result.ptr != text.data() + text.size()) {
-    throw std::invalid_argument("参数 " + std::string{option} + " 的值无效: " +
-                                std::string{text});
+    throw std::invalid_argument("参数 " + std::string{option} + " 的值无效: " + std::string{text});
   }
   return value;
 }
@@ -54,8 +53,8 @@ template <typename Integer>
   return threads;
 }
 
-[[nodiscard]] auto option_value(std::span<const std::string_view> arguments,
-                                std::size_t& index) -> std::string_view {
+[[nodiscard]] auto option_value(std::span<const std::string_view> arguments, std::size_t& index)
+    -> std::string_view {
   if (index + 1 >= arguments.size()) {
     throw std::invalid_argument("参数 " + std::string{arguments[index]} + " 缺少值");
   }
@@ -133,12 +132,11 @@ void print_system_info() {
 }
 
 void print_workloads(const benchmark::WorkloadRegistry& registry) {
-  std::cout << std::left << std::setw(18) << "ID" << std::setw(10) << "版本"
-            << std::setw(14) << "类别" << "说明\n";
+  std::cout << std::left << std::setw(18) << "ID" << std::setw(10) << "版本" << std::setw(14)
+            << "类别" << "说明\n";
   for (const auto& descriptor : registry.descriptors()) {
-    std::cout << std::left << std::setw(18) << descriptor.id << std::setw(10)
-              << descriptor.version << std::setw(14) << descriptor.category << descriptor.description
-              << '\n';
+    std::cout << std::left << std::setw(18) << descriptor.id << std::setw(10) << descriptor.version
+              << std::setw(14) << descriptor.category << descriptor.description << '\n';
   }
 }
 
@@ -153,10 +151,9 @@ void print_result(const BenchmarkResult& result, const std::filesystem::path& ou
 }
 
 [[nodiscard]] auto find_median(const ResultSummary& summary, unsigned threads) -> double {
-  const auto match = std::ranges::find_if(summary.median_by_thread_count,
-                                          [threads](const auto& item) {
-                                            return item.first == threads;
-                                          });
+  const auto match =
+      std::ranges::find_if(summary.median_by_thread_count,
+                           [threads](const auto& item) { return item.first == threads; });
   if (match == summary.median_by_thread_count.end()) {
     throw std::runtime_error("结果缺少线程数 " + std::to_string(threads) + " 的样本");
   }
@@ -320,4 +317,3 @@ auto CliApplication::run(std::span<const std::string_view> arguments) const -> i
 }
 
 } // namespace gamebench::core
-

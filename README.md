@@ -37,11 +37,12 @@ ctest --preset release
 gamebench system-info
 gamebench list
 gamebench run --workload integer --threads 1,2,4 --output result.json
+gamebench run --workload scheduler --scheduler work-stealing --threads 1,2,4,8
 gamebench run --workload integer --format csv --output result.csv
 gamebench compare result-a.json result-b.json
 ```
 
-当前只注册了 `integer` 基础设施验证工作负载。后续工作负载只有在实现并通过校验后才会出现在 `gamebench list` 中。具体参数以 `gamebench --help` 的输出为准。
+当前注册了 `integer` 基础设施验证负载和 `scheduler` 调度验证负载。后续工作负载只有在实现并通过校验后才会出现在 `gamebench list` 中。具体参数以 `gamebench --help` 的输出为准。
 
 ## 项目状态
 

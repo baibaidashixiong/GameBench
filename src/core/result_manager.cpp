@@ -69,7 +69,8 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
   write_escaped_json(output, to_string(result.config.mode));
   output << ",\n    \"scheduler\": ";
   write_escaped_json(output, to_string(result.config.scheduler));
-  output << ",\n    \"seed\": " << result.config.seed << ",\n    \"objects\": " << result.config.objects
+  output << ",\n    \"seed\": " << result.config.seed
+         << ",\n    \"objects\": " << result.config.objects
          << ",\n    \"iterations\": " << result.config.iterations
          << ",\n    \"warmup_iterations\": " << result.config.warmup_iterations
          << ",\n    \"repetitions\": " << result.config.repetitions << "\n  },\n"
@@ -99,8 +100,7 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
     if (run_index != 0) {
       output << ",\n";
     }
-    output << "    {\n      \"thread_count\": " << run.thread_count
-           << ",\n      \"samples_ms\": [";
+    output << "    {\n      \"thread_count\": " << run.thread_count << ",\n      \"samples_ms\": [";
     for (std::size_t sample_index = 0; sample_index < run.samples_ms.size(); ++sample_index) {
       if (sample_index != 0) {
         output << ", ";
@@ -114,9 +114,19 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
            << ",\n      \"p99_9_frame_time_ms\": " << run.statistics.p999_ms
            << ",\n      \"maximum_frame_time_ms\": " << run.statistics.maximum_ms
            << ",\n      \"operations\": " << run.operations
-           << ",\n      \"checksum\": " << run.checksum << ",\n      \"validation_status\": "
-           << (run.valid ? "\"passed\"" : "\"failed\"") << ",\n      \"validation_message\": ";
+           << ",\n      \"checksum\": " << run.checksum
+           << ",\n      \"validation_status\": " << (run.valid ? "\"passed\"" : "\"failed\"")
+           << ",\n      \"validation_message\": ";
     write_escaped_json(output, run.validation_message);
+    if (run.scheduling) {
+      output << ",\n      \"scheduling\": {\n        \"submitted_jobs\": "
+             << run.scheduling->submitted_jobs
+             << ",\n        \"completed_jobs\": " << run.scheduling->completed_jobs
+             << ",\n        \"stolen_jobs\": " << run.scheduling->stolen_jobs
+             << ",\n        \"main_thread_jobs\": " << run.scheduling->main_thread_jobs
+             << ",\n        \"exceptions\": " << run.scheduling->exceptions
+             << ",\n        \"worker_busy_ms\": " << run.scheduling->worker_busy_ms << "\n      }";
+    }
     output << "\n    }";
   }
 
@@ -143,9 +153,9 @@ void write_csv(const BenchmarkResult& result, std::ostream& output) {
     const auto& scaling = result.thread_scaling[index];
     output << result.benchmark_id << ',' << result.benchmark_version << ',' << run.thread_count
            << ',' << run.statistics.mean_ms << ',' << run.statistics.median_ms << ','
-           << run.statistics.p95_ms << ',' << run.statistics.p99_ms << ','
-           << run.statistics.p999_ms << ',' << run.statistics.maximum_ms << ',' << scaling.speedup
-           << ',' << scaling.efficiency << ',' << run.operations << ',' << run.checksum << ','
+           << run.statistics.p95_ms << ',' << run.statistics.p99_ms << ',' << run.statistics.p999_ms
+           << ',' << run.statistics.maximum_ms << ',' << scaling.speedup << ','
+           << scaling.efficiency << ',' << run.operations << ',' << run.checksum << ','
            << (run.valid ? "passed" : "failed") << '\n';
   }
 }
@@ -181,9 +191,7 @@ void ResultManager::write(const BenchmarkResult& result, const std::filesystem::
 auto ResultManager::default_output_path(const BenchmarkResult& result, ExportFormat format)
     -> std::filesystem::path {
   const auto extension = format == ExportFormat::Json ? ".json" : ".csv";
-  return std::filesystem::path{"results"} /
-         (result.benchmark_id + "-" + timestamp() + extension);
+  return std::filesystem::path{"results"} / (result.benchmark_id + "-" + timestamp() + extension);
 }
 
 } // namespace gamebench::core
-

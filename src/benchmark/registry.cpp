@@ -1,6 +1,7 @@
 #include "benchmark/registry.hpp"
 
 #include "benchmark/integer_workload.hpp"
+#include "benchmark/scheduler_workload.hpp"
 
 #include <stdexcept>
 #include <utility>
@@ -48,8 +49,9 @@ auto WorkloadRegistry::create_default() -> WorkloadRegistry {
   WorkloadRegistry registry;
   registry.add({"integer", "1", "synthetic", "确定性整数混合负载"},
                [] { return std::make_unique<IntegerWorkload>(); });
+  registry.add({"scheduler", "1", "synthetic", "三种调度模式的任务图负载"},
+               [] { return std::make_unique<SchedulerWorkload>(); });
   return registry;
 }
 
 } // namespace gamebench::benchmark
-

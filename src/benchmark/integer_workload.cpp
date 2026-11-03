@@ -17,11 +17,17 @@ namespace {
 
 } // namespace
 
-auto IntegerWorkload::id() const -> std::string_view { return "integer"; }
+auto IntegerWorkload::id() const -> std::string_view {
+  return "integer";
+}
 
-auto IntegerWorkload::version() const -> std::string_view { return "1"; }
+auto IntegerWorkload::version() const -> std::string_view {
+  return "1";
+}
 
-auto IntegerWorkload::category() const -> std::string_view { return "synthetic"; }
+auto IntegerWorkload::category() const -> std::string_view {
+  return "synthetic";
+}
 
 auto IntegerWorkload::description() const -> std::string_view {
   return "用于验证 Runner 的确定性整数混合负载";
@@ -45,4 +51,3 @@ auto IntegerWorkload::execute(const WorkloadConfig& config) -> WorkloadOutput {
 }
 
 } // namespace gamebench::benchmark
-

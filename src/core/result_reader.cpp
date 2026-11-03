@@ -9,14 +9,14 @@
 namespace gamebench::core {
 namespace {
 
-[[nodiscard]] auto find_key(std::string_view json, std::string_view key,
-                            std::size_t start = 0) -> std::size_t {
+[[nodiscard]] auto find_key(std::string_view json, std::string_view key, std::size_t start = 0)
+    -> std::size_t {
   std::string quoted = "\"" + std::string{key} + "\"";
   return json.find(quoted, start);
 }
 
-[[nodiscard]] auto value_start(std::string_view json, std::string_view key,
-                               std::size_t start = 0) -> std::size_t {
+[[nodiscard]] auto value_start(std::string_view json, std::string_view key, std::size_t start = 0)
+    -> std::size_t {
   const auto key_position = find_key(json, key, start);
   if (key_position == std::string_view::npos) {
     throw std::runtime_error("结果文件缺少字段: " + std::string{key});
@@ -33,8 +33,8 @@ namespace {
   return position;
 }
 
-[[nodiscard]] auto read_string(std::string_view json, std::string_view key,
-                               std::size_t start = 0) -> std::string {
+[[nodiscard]] auto read_string(std::string_view json, std::string_view key, std::size_t start = 0)
+    -> std::string {
   auto position = value_start(json, key, start);
   if (position >= json.size() || json[position] != '"') {
     throw std::runtime_error("结果文件字符串字段无效: " + std::string{key});
@@ -46,8 +46,8 @@ namespace {
   return std::string{json.substr(position + 1, end - position - 1)};
 }
 
-[[nodiscard]] auto read_number(std::string_view json, std::string_view key,
-                               std::size_t start = 0) -> double {
+[[nodiscard]] auto read_number(std::string_view json, std::string_view key, std::size_t start = 0)
+    -> double {
   const auto position = value_start(json, key, start);
   double value = 0.0;
   const auto result = std::from_chars(json.data() + position, json.data() + json.size(), value);
@@ -79,8 +79,8 @@ auto read_result_summary(const std::filesystem::path& path) -> ResultSummary {
     if (thread_key == std::string::npos || thread_key >= end) {
       break;
     }
-    const auto thread_count = static_cast<unsigned>(
-        read_number(contents, "thread_count", thread_key));
+    const auto thread_count =
+        static_cast<unsigned>(read_number(contents, "thread_count", thread_key));
     const auto median = read_number(contents, "median_frame_time_ms", thread_key);
     summary.median_by_thread_count.emplace_back(thread_count, median);
     position = thread_key + 1;
@@ -93,4 +93,3 @@ auto read_result_summary(const std::filesystem::path& path) -> ResultSummary {
 }
 
 } // namespace gamebench::core
-

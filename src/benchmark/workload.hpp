@@ -1,8 +1,10 @@
 #pragma once
 
+#include "core/config.hpp"
 #include "core/timing.hpp"
 
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -15,6 +17,16 @@ struct WorkloadConfig {
   std::uint64_t seed{};
   std::uint64_t objects{};
   std::uint64_t iterations{};
+  core::SchedulerKind scheduler{core::SchedulerKind::WorkStealing};
+};
+
+struct SchedulingMetrics {
+  std::uint64_t submitted_jobs{};
+  std::uint64_t completed_jobs{};
+  std::uint64_t stolen_jobs{};
+  std::uint64_t main_thread_jobs{};
+  std::uint64_t exceptions{};
+  double worker_busy_ms{};
 };
 
 struct WorkloadOutput {
@@ -22,6 +34,7 @@ struct WorkloadOutput {
   std::uint64_t operations{};
   bool valid{};
   std::string validation_message;
+  std::optional<SchedulingMetrics> scheduling;
 };
 
 class Workload {
@@ -36,4 +49,3 @@ public:
 };
 
 } // namespace gamebench::benchmark
-

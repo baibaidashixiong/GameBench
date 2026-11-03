@@ -16,4 +16,3 @@ struct ResultSummary {
 [[nodiscard]] auto read_result_summary(const std::filesystem::path& path) -> ResultSummary;
 
 } // namespace gamebench::core
-

@@ -11,4 +11,7 @@
 - 实现类型安全的运行配置、稳定计时统计、工作负载注册与 Benchmark Runner。
 - 实现 JSON/CSV 结果导出、结果比较和 `run/list/system-info/compare` CLI。
 - 添加确定性整数验证工作负载及 Linux 基础环境信息采集。
+- 实现基于 `std::jthread` 的 Job System、原子依赖、异常传播和安全关闭。
+- 支持 Global Queue、Static Partitioning、Work Stealing 三种调度模式。
+- 添加调度工作负载、任务计数与窃取次数统计，并通过 ASan、UBSan、TSan 测试。
 

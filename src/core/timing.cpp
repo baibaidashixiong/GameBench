@@ -10,8 +10,7 @@ namespace gamebench::core {
 namespace {
 
 [[nodiscard]] auto percentile(std::span<const double> sorted, double value) -> double {
-  const auto rank = static_cast<std::size_t>(
-      std::ceil(value * static_cast<double>(sorted.size())));
+  const auto rank = static_cast<std::size_t>(std::ceil(value * static_cast<double>(sorted.size())));
   const auto index = std::max<std::size_t>(1, rank) - 1;
   return sorted[index];
 }
@@ -42,4 +41,3 @@ auto calculate_statistics(std::span<const double> samples_ms) -> SampleStatistic
 }
 
 } // namespace gamebench::core
-

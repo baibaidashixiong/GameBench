@@ -52,4 +52,3 @@ TEST(ResultManagerTest, WritesMachineReadableResults) {
   EXPECT_NE(contents.find("\"thread_scaling\""), std::string::npos);
   std::filesystem::remove(path);
 }
-

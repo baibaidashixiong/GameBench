@@ -9,11 +9,11 @@
 
 TEST(CliTest, ParsesRunConfiguration) {
   constexpr std::array arguments{
-      std::string_view{"--workload"}, std::string_view{"integer"},
-      std::string_view{"--threads"},  std::string_view{"1,2,4"},
-      std::string_view{"--seed"},     std::string_view{"99"},
-      std::string_view{"--objects"},  std::string_view{"4096"},
-      std::string_view{"--warmup"},   std::string_view{"2"},
+      std::string_view{"--workload"},    std::string_view{"integer"},
+      std::string_view{"--threads"},     std::string_view{"1,2,4"},
+      std::string_view{"--seed"},        std::string_view{"99"},
+      std::string_view{"--objects"},     std::string_view{"4096"},
+      std::string_view{"--warmup"},      std::string_view{"2"},
       std::string_view{"--repetitions"}, std::string_view{"5"},
   };
 
@@ -31,4 +31,3 @@ TEST(CliTest, RejectsUnknownOptions) {
   constexpr std::array arguments{std::string_view{"--unknown"}};
   EXPECT_THROW((void)gamebench::core::parse_run_config(arguments), std::invalid_argument);
 }
-

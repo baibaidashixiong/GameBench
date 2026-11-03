@@ -11,4 +11,3 @@ TEST(GameBenchInfrastructure, VersionIsNotEmpty) {
 TEST(GameBenchInfrastructure, ProjectNameMatches) {
   EXPECT_EQ(gamebench::core::kProjectName, std::string{"GameBench"});
 }
-

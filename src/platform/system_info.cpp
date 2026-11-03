@@ -91,4 +91,3 @@ auto collect_system_info() -> SystemInfo {
 }
 
 } // namespace gamebench::platform
-

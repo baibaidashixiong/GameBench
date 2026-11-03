@@ -35,4 +35,3 @@ auto to_string(ExportFormat format) -> std::string_view {
 }
 
 } // namespace gamebench::core
-

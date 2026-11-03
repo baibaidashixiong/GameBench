@@ -14,4 +14,3 @@ public:
 };
 
 } // namespace gamebench::benchmark
-

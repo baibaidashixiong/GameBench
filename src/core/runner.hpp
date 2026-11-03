@@ -6,6 +6,7 @@
 #include "platform/system_info.hpp"
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -19,6 +20,7 @@ struct BenchmarkRun {
   std::uint64_t checksum{};
   bool valid{};
   std::string validation_message;
+  std::optional<benchmark::SchedulingMetrics> scheduling;
 };
 
 struct ThreadScaling {
@@ -40,15 +42,12 @@ struct BenchmarkResult {
 
 class BenchmarkRunner final {
 public:
-  [[nodiscard]] auto run(benchmark::Workload& workload, const RunConfig& config)
-      -> BenchmarkResult;
+  [[nodiscard]] auto run(benchmark::Workload& workload, const RunConfig& config) -> BenchmarkResult;
 
 private:
   static void execute_iterations(benchmark::Workload& workload,
                                  const benchmark::WorkloadConfig& workload_config,
-                                 std::uint64_t iterations, bool measure,
-                                 BenchmarkRun& run);
+                                 std::uint64_t iterations, bool measure, BenchmarkRun& run);
 };
 
 } // namespace gamebench::core
-

@@ -17,5 +17,6 @@ TEST(TimingTest, CalculatesNearestRankStatistics) {
   EXPECT_DOUBLE_EQ(statistics.maximum_ms, 5.0);
 }
 
-TEST(TimingTest, RejectsEmptySamples) { EXPECT_THROW((void)gamebench::core::calculate_statistics({}), std::invalid_argument); }
-
+TEST(TimingTest, RejectsEmptySamples) {
+  EXPECT_THROW((void)gamebench::core::calculate_statistics({}), std::invalid_argument);
+}

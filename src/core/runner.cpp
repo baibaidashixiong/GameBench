@@ -20,6 +20,9 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
       run.valid = false;
       run.validation_message = output.validation_message;
     }
+    if (output.scheduling) {
+      run.scheduling = output.scheduling;
+    }
     if (iteration == 0) {
       run.checksum = output.checksum;
     } else {
@@ -71,6 +74,7 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
         .seed = config.seed,
         .objects = config.objects,
         .iterations = config.iterations,
+        .scheduler = config.scheduler,
     };
 
     execute_iterations(workload, workload_config, config.warmup_iterations, false, run_result);
@@ -97,4 +101,3 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
 }
 
 } // namespace gamebench::core
-
