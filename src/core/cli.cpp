@@ -6,6 +6,7 @@
 #include "core/result_reader.hpp"
 #include "core/runner.hpp"
 #include "core/version.hpp"
+#include "platform/cpu_topology.hpp"
 #include "platform/system_info.hpp"
 
 #include <algorithm>
@@ -83,6 +84,10 @@ void print_help() {
             << "  --working-set <字节>     内存工作集大小\n"
             << "  --buffer-size <帧数>     Audio DSP 缓冲区大小\n"
             << "  --sample-rate <Hz>       Audio DSP 输出采样率\n"
+            << "  --cpu-affinity <列表>    绑定主线程与 Worker 的逻辑 CPU\n"
+            << "  --physical-core <列表>   按物理核心索引选择逻辑 CPU\n"
+            << "  --numa-node <列表>       按 NUMA 节点索引选择逻辑 CPU\n"
+            << "  --hardware-counters      尝试采集 perf 硬件计数器\n"
             << "  --seed <整数>            固定随机种子\n"
             << "  --objects <数量>         工作负载规模\n"
             << "  --iterations <数量>      每个样本内的工作负载迭代数\n"
@@ -166,14 +171,43 @@ void print_help() {
 
 void print_system_info() {
   const auto info = platform::collect_system_info();
+  const auto topology = platform::detect_cpu_topology();
   std::cout << "CPU 厂商: " << info.cpu_vendor << '\n'
             << "CPU 型号: " << info.cpu_model << '\n'
             << "逻辑处理器: " << info.logical_processors << '\n'
+            << "物理核心: " << topology.physical_cores << '\n'
+            << "SMT: " << (topology.smt_enabled ? "启用" : "未启用或 Unknown") << '\n'
+            << "NUMA 节点: " << topology.numa_nodes << '\n'
+            << "CCD 类型: " << topology.ccd_type << '\n'
+            << "核心类型: " << topology.core_type << '\n'
             << "操作系统: " << info.operating_system << '\n'
             << "内核: " << info.kernel_release << '\n'
             << "编译器: " << info.compiler << ' ' << info.compiler_version << '\n'
             << "构建类型: " << info.build_type << '\n'
-            << "CPU Governor: " << info.cpu_governor << '\n';
+            << "CPU Governor: " << info.cpu_governor << '\n'
+            << "可用逻辑 CPU: ";
+  for (std::size_t index = 0; index < topology.allowed_cpus.size(); ++index) {
+    if (index != 0) {
+      std::cout << ',';
+    }
+    std::cout << topology.allowed_cpus[index];
+  }
+  std::cout << '\n';
+  for (const auto& cache : topology.caches) {
+    std::cout << "缓存: L" << cache.level << ' ' << cache.type << ' ' << cache.size_bytes / 1024U
+              << " KiB\n";
+  }
+  if (info.current_frequency_mhz) {
+    std::cout << "当前频率: " << *info.current_frequency_mhz << " MHz\n";
+  }
+  if (info.maximum_frequency_mhz) {
+    std::cout << "最大频率: " << *info.maximum_frequency_mhz << " MHz\n";
+  }
+  if (info.package_temperature_celsius) {
+    std::cout << "封装温度: " << *info.package_temperature_celsius << " C\n";
+  } else {
+    std::cout << "封装温度: Unavailable\n";
+  }
 }
 
 void print_workloads(const benchmark::WorkloadRegistry& registry) {
@@ -314,6 +348,28 @@ auto parse_run_config(std::span<const std::string_view> arguments) -> RunConfig 
           parse_integer<std::uint32_t>(option_value(arguments, index), option);
     } else if (option == "--sample-rate") {
       config.sample_rate = parse_integer<std::uint32_t>(option_value(arguments, index), option);
+    } else if (option == "--cpu-affinity") {
+      config.cpu_affinity = parse_threads(option_value(arguments, index));
+    } else if (option == "--physical-core") {
+      const auto indices = parse_threads(option_value(arguments, index));
+      for (const auto core_index : indices) {
+        const auto cpus = platform::logical_cpus_for_physical_core(core_index);
+        config.cpu_affinity.insert(config.cpu_affinity.end(), cpus.begin(), cpus.end());
+      }
+      std::ranges::sort(config.cpu_affinity);
+      config.cpu_affinity.erase(std::ranges::unique(config.cpu_affinity).begin(),
+                                config.cpu_affinity.end());
+    } else if (option == "--numa-node") {
+      const auto indices = parse_threads(option_value(arguments, index));
+      for (const auto node_index : indices) {
+        const auto cpus = platform::logical_cpus_for_numa_node(node_index);
+        config.cpu_affinity.insert(config.cpu_affinity.end(), cpus.begin(), cpus.end());
+      }
+      std::ranges::sort(config.cpu_affinity);
+      config.cpu_affinity.erase(std::ranges::unique(config.cpu_affinity).begin(),
+                                config.cpu_affinity.end());
+    } else if (option == "--hardware-counters") {
+      config.hardware_counters = true;
     } else if (option == "--seed") {
       config.seed = parse_integer<std::uint64_t>(option_value(arguments, index), option);
     } else if (option == "--objects") {

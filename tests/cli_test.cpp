@@ -43,3 +43,15 @@ TEST(CliTest, ParsesVulkanMode) {
   EXPECT_EQ(config.workload, "vulkan");
   EXPECT_EQ(config.vulkan_mode, gamebench::core::VulkanMode::GpuBacked);
 }
+
+TEST(CliTest, ParsesAffinityAndHardwareCounters) {
+  constexpr std::array arguments{
+      std::string_view{"--cpu-affinity"},
+      std::string_view{"0,2,4"},
+      std::string_view{"--hardware-counters"},
+  };
+  const auto config = gamebench::core::parse_run_config(arguments);
+  ASSERT_EQ(config.cpu_affinity.size(), 3U);
+  EXPECT_EQ(config.cpu_affinity[1], 2U);
+  EXPECT_TRUE(config.hardware_counters);
+}

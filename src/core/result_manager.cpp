@@ -52,6 +52,17 @@ void write_json_string_array(std::ostream& output, const std::vector<std::string
   output << ']';
 }
 
+void write_json_unsigned_array(std::ostream& output, const std::vector<unsigned>& values) {
+  output << '[';
+  for (std::size_t index = 0; index < values.size(); ++index) {
+    if (index != 0) {
+      output << ", ";
+    }
+    output << values[index];
+  }
+  output << ']';
+}
+
 void write_json(const BenchmarkResult& result, std::ostream& output) {
   const bool all_skipped =
       std::ranges::all_of(result.runs, [](const BenchmarkRun& run) { return run.skipped; });
@@ -82,7 +93,9 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
          << ",\n    \"objects\": " << result.config.objects
          << ",\n    \"working_set_bytes\": " << result.config.working_set_bytes
          << ",\n    \"audio_buffer_size\": " << result.config.audio_buffer_size
-         << ",\n    \"sample_rate\": " << result.config.sample_rate
+         << ",\n    \"sample_rate\": " << result.config.sample_rate << ",\n    \"cpu_affinity\": ";
+  write_json_unsigned_array(output, result.config.cpu_affinity);
+  output << ",\n    \"hardware_counters\": " << (result.config.hardware_counters ? "true" : "false")
          << ",\n    \"iterations\": " << result.config.iterations
          << ",\n    \"warmup_iterations\": " << result.config.warmup_iterations
          << ",\n    \"repetitions\": " << result.config.repetitions << "\n  },\n"
@@ -91,7 +104,25 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
   output << ",\n    \"cpu_model\": ";
   write_escaped_json(output, result.system.cpu_model);
   output << ",\n    \"logical_processors\": " << result.system.logical_processors
-         << ",\n    \"cpu_features\": ";
+         << ",\n    \"physical_cores\": " << result.topology.physical_cores
+         << ",\n    \"smt_enabled\": " << (result.topology.smt_enabled ? "true" : "false")
+         << ",\n    \"numa_nodes\": " << result.topology.numa_nodes << ",\n    \"allowed_cpus\": ";
+  write_json_unsigned_array(output, result.topology.allowed_cpus);
+  output << ",\n    \"ccd_type\": ";
+  write_escaped_json(output, result.topology.ccd_type);
+  output << ",\n    \"core_type\": ";
+  write_escaped_json(output, result.topology.core_type);
+  output << ",\n    \"caches\": [";
+  for (std::size_t index = 0; index < result.topology.caches.size(); ++index) {
+    if (index != 0) {
+      output << ", ";
+    }
+    const auto& cache = result.topology.caches[index];
+    output << "{\"level\": " << cache.level << ", \"type\": ";
+    write_escaped_json(output, cache.type);
+    output << ", \"size_bytes\": " << cache.size_bytes << '}';
+  }
+  output << ']' << ",\n    \"cpu_features\": ";
   write_json_string_array(output, result.system.cpu_features);
   output << "\n  },\n  \"environment\": {\n    \"operating_system\": ";
   write_escaped_json(output, result.system.operating_system);
@@ -105,7 +136,36 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
   write_escaped_json(output, result.system.build_type);
   output << ",\n    \"cpu_governor\": ";
   write_escaped_json(output, result.system.cpu_governor);
-  output << "\n  },\n  \"timing_results\": [\n";
+  if (result.system.current_frequency_mhz) {
+    output << ",\n    \"current_frequency_mhz\": " << *result.system.current_frequency_mhz;
+  }
+  if (result.system.minimum_frequency_mhz) {
+    output << ",\n    \"minimum_frequency_mhz\": " << *result.system.minimum_frequency_mhz;
+  }
+  if (result.system.maximum_frequency_mhz) {
+    output << ",\n    \"maximum_frequency_mhz\": " << *result.system.maximum_frequency_mhz;
+  }
+  if (result.system.package_temperature_celsius) {
+    output << ",\n    \"package_temperature_celsius\": "
+           << *result.system.package_temperature_celsius;
+  }
+  output << "\n  }";
+  if (result.hardware_counters) {
+    const auto& counters = *result.hardware_counters;
+    output << ",\n  \"hardware_counters\": {\n    \"requested\": "
+           << (counters.requested ? "true" : "false")
+           << ",\n    \"available\": " << (counters.available ? "true" : "false")
+           << ",\n    \"cycles\": " << counters.cycles
+           << ",\n    \"instructions\": " << counters.instructions
+           << ",\n    \"ipc\": " << counters.ipc
+           << ",\n    \"branch_misses\": " << counters.branch_misses
+           << ",\n    \"cache_misses\": " << counters.cache_misses
+           << ",\n    \"context_switches\": " << counters.context_switches
+           << ",\n    \"message\": ";
+    write_escaped_json(output, counters.message);
+    output << "\n  }";
+  }
+  output << ",\n  \"timing_results\": [\n";
 
   for (std::size_t run_index = 0; run_index < result.runs.size(); ++run_index) {
     const auto& run = result.runs[run_index];
@@ -125,7 +185,16 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
            << ",\n      \"p99_frame_time_ms\": " << run.statistics.p99_ms
            << ",\n      \"p99_9_frame_time_ms\": " << run.statistics.p999_ms
            << ",\n      \"maximum_frame_time_ms\": " << run.statistics.maximum_ms
-           << ",\n      \"operations\": " << run.operations
+           << ",\n      \"critical_path_time_ms\": " << run.critical_path_time_ms
+           << ",\n      \"main_thread_time_ms\": " << run.main_thread_time_ms
+           << ",\n      \"main_thread_cpu_migrations\": " << run.main_thread_cpu_migrations;
+    if (run.worker_thread_time_ms) {
+      output << ",\n      \"worker_thread_time_ms\": " << *run.worker_thread_time_ms;
+    }
+    if (run.total_cpu_work_ms) {
+      output << ",\n      \"total_cpu_work_ms\": " << *run.total_cpu_work_ms;
+    }
+    output << ",\n      \"operations\": " << run.operations
            << ",\n      \"checksum\": " << run.checksum << ",\n      \"validation_status\": "
            << (run.skipped ? "\"skipped\"" : (run.valid ? "\"passed\"" : "\"failed\""))
            << ",\n      \"validation_message\": ";
@@ -165,7 +234,9 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
 void write_csv(const BenchmarkResult& result, std::ostream& output) {
   output << "benchmark_id,benchmark_version,thread_count,mean_frame_time_ms,"
             "median_frame_time_ms,p95_frame_time_ms,p99_frame_time_ms,p99_9_frame_time_ms,"
-            "maximum_frame_time_ms,speedup,efficiency,operations,checksum,validation_status\n";
+            "maximum_frame_time_ms,critical_path_time_ms,main_thread_time_ms,"
+            "main_thread_cpu_migrations,speedup,efficiency,operations,checksum,"
+            "validation_status\n";
   output << std::fixed << std::setprecision(9);
   for (std::size_t index = 0; index < result.runs.size(); ++index) {
     const auto& run = result.runs[index];
@@ -173,9 +244,11 @@ void write_csv(const BenchmarkResult& result, std::ostream& output) {
     output << result.benchmark_id << ',' << result.benchmark_version << ',' << run.thread_count
            << ',' << run.statistics.mean_ms << ',' << run.statistics.median_ms << ','
            << run.statistics.p95_ms << ',' << run.statistics.p99_ms << ',' << run.statistics.p999_ms
-           << ',' << run.statistics.maximum_ms << ',' << scaling.speedup << ','
-           << scaling.efficiency << ',' << run.operations << ',' << run.checksum << ','
-           << (run.skipped ? "skipped" : (run.valid ? "passed" : "failed")) << '\n';
+           << ',' << run.statistics.maximum_ms << ',' << run.critical_path_time_ms << ','
+           << run.main_thread_time_ms << ',' << run.main_thread_cpu_migrations << ','
+           << scaling.speedup << ',' << scaling.efficiency << ',' << run.operations << ','
+           << run.checksum << ',' << (run.skipped ? "skipped" : (run.valid ? "passed" : "failed"))
+           << '\n';
   }
 }
 

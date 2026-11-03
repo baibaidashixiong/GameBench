@@ -25,6 +25,7 @@ namespace {
       .vulkan_mode = mode,
       .audio_buffer_size = 1024,
       .sample_rate = 48000,
+      .cpu_affinity = {},
   };
 }
 

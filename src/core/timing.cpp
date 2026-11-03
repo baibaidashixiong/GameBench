@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include <ctime>
+
 namespace gamebench::core {
 namespace {
 
@@ -19,6 +21,15 @@ namespace {
 
 auto milliseconds_since(SteadyClock::time_point start, SteadyClock::time_point end) -> double {
   return std::chrono::duration<double, std::milli>(end - start).count();
+}
+
+auto current_thread_cpu_time_ms() -> double {
+  timespec value{};
+  if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &value) != 0) {
+    return 0.0;
+  }
+  return static_cast<double>(value.tv_sec) * 1000.0 +
+         static_cast<double>(value.tv_nsec) / 1'000'000.0;
 }
 
 auto calculate_statistics(std::span<const double> samples_ms) -> SampleStatistics {

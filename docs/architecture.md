@@ -43,6 +43,12 @@ Physics 使用确定性的原生刚体、积分、Sweep-and-Prune Broad-phase、
 
 Animation 工作负载对两套程序化动画采样并进行姿态混合，在固定骨骼层级上执行四元数变换与 Forward Kinematics。AI 工作负载结合行为决策树和 A* Navigation 查询。Audio 工作负载在 CPU 上完成多通道合成、FIR、双倍采样输入、线性重采样、Reverb 和 Stereo Mixing，不访问音频设备。
 
+## 平台与 Profiling
+
+hwloc 提供 CPU 拓扑与缓存层次，sysfs 提供 Governor、频率和可选温度。Affinity 使用作用域绑定并在基准结束后恢复，Worker 使用独立逻辑 CPU 配置。`perf_event_open` 采集 cycles、instructions、IPC、branch miss、cache miss 和 context switch；权限不足时只记录不可用原因，不影响 Benchmark 完成。
+
+结果记录 wall-clock 关键路径、主线程 CPU 时间、Job System Worker 忙碌时间和主线程迁移次数。无法可靠分离的 synchronization overhead 不会被估算或伪造，后续只有在增加明确测量点后才会输出。
+
 ## 可复现性
 
 每个工作负载接收规范化配置、固定随机种子和显式线程数。运行结果记录硬件、环境、编译类型、Affinity 和版本信息。异常值不会被静默删除。

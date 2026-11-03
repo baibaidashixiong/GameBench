@@ -102,7 +102,7 @@ void EcsWorkload::ensure_system(const WorkloadConfig& config) {
       .worker_count = std::max(1U, config.thread_count - 1U),
       .main_thread_participates = config.thread_count > 1,
       .scheduler = config.scheduler,
-      .cpu_affinity = {},
+      .cpu_affinity = worker_affinity(config),
   });
 }
 

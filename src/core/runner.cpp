@@ -1,9 +1,13 @@
 #include "core/runner.hpp"
 
+#include "platform/cpu_affinity.hpp"
+
 #include <algorithm>
 #include <limits>
 #include <stdexcept>
 #include <unordered_set>
+
+#include <sched.h>
 
 namespace gamebench::core {
 
@@ -13,8 +17,12 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
                                          BenchmarkRun& run) {
   for (std::uint64_t iteration = 0; iteration < iterations; ++iteration) {
     const auto start = SteadyClock::now();
+    const auto cpu_start = current_thread_cpu_time_ms();
+    const auto cpu_before = sched_getcpu();
     const auto output = workload.execute(workload_config);
     const auto end = SteadyClock::now();
+    const auto cpu_end = current_thread_cpu_time_ms();
+    const auto cpu_after = sched_getcpu();
 
     if (output.skipped) {
       run.skipped = true;
@@ -37,6 +45,10 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
     }
     if (measure) {
       run.samples_ms.push_back(output.measured_time_ms.value_or(milliseconds_since(start, end)));
+      run.main_thread_cpu_ms.push_back(cpu_end - cpu_start);
+      if (cpu_before >= 0 && cpu_after >= 0 && cpu_before != cpu_after) {
+        ++run.main_thread_cpu_migrations;
+      }
       if (!output.skipped) {
         run.operations += output.operations;
       }
@@ -46,6 +58,7 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
 
 auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config)
     -> BenchmarkResult {
+  const platform::ScopedThreadAffinity affinity(config.cpu_affinity);
   if (config.thread_counts.empty()) {
     throw std::invalid_argument("线程数量不能为空");
   }
@@ -64,6 +77,9 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
     if (thread_count == 0 || !unique_threads.insert(thread_count).second) {
       throw std::invalid_argument("线程数量必须是非零且互不重复的正整数");
     }
+    if (!config.cpu_affinity.empty() && thread_count > config.cpu_affinity.size()) {
+      throw std::invalid_argument("CPU Affinity 数量不能少于线程数量");
+    }
   }
 
   BenchmarkResult result;
@@ -71,7 +87,9 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
   result.benchmark_version = std::string{workload.version()};
   result.config = config;
   result.system = platform::collect_system_info();
+  result.topology = platform::detect_cpu_topology();
   result.valid = true;
+  profiler::HardwareCounterSession hardware_session(config.hardware_counters);
 
   for (const auto thread_count : config.thread_counts) {
     BenchmarkRun run_result;
@@ -91,6 +109,7 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
         .vulkan_mode = config.vulkan_mode,
         .audio_buffer_size = config.audio_buffer_size,
         .sample_rate = config.sample_rate,
+        .cpu_affinity = config.cpu_affinity,
     };
 
     execute_iterations(workload, workload_config, config.warmup_iterations, false, run_result);
@@ -98,6 +117,13 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
     run_result.operations = 0;
     execute_iterations(workload, workload_config, config.repetitions, true, run_result);
     run_result.statistics = calculate_statistics(run_result.samples_ms);
+    run_result.main_thread_time_ms = calculate_statistics(run_result.main_thread_cpu_ms).median_ms;
+    run_result.critical_path_time_ms = run_result.statistics.median_ms;
+    if (run_result.scheduling) {
+      run_result.worker_thread_time_ms = run_result.scheduling->worker_busy_ms;
+      run_result.total_cpu_work_ms =
+          run_result.main_thread_time_ms + run_result.scheduling->worker_busy_ms;
+    }
     result.valid = result.valid && (run_result.valid || run_result.skipped);
     result.runs.push_back(std::move(run_result));
   }
@@ -111,6 +137,10 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
         {.thread_count = run.thread_count,
          .speedup = speedup,
          .efficiency = speedup / static_cast<double>(run.thread_count)});
+  }
+
+  if (config.hardware_counters) {
+    result.hardware_counters = hardware_session.stop();
   }
 
   return result;

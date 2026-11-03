@@ -24,7 +24,15 @@ struct WorkloadConfig {
   core::VulkanMode vulkan_mode{core::VulkanMode::NoSubmit};
   std::uint32_t audio_buffer_size{1024};
   std::uint32_t sample_rate{48000};
+  std::vector<unsigned> cpu_affinity;
 };
+
+[[nodiscard]] inline auto worker_affinity(const WorkloadConfig& config) -> std::vector<unsigned> {
+  if (config.cpu_affinity.size() <= 1) {
+    return config.cpu_affinity;
+  }
+  return {config.cpu_affinity.begin() + 1, config.cpu_affinity.end()};
+}
 
 struct SchedulingMetrics {
   std::uint64_t submitted_jobs{};

@@ -18,6 +18,7 @@ struct SampleStatistics {
 
 [[nodiscard]] auto milliseconds_since(SteadyClock::time_point start, SteadyClock::time_point end)
     -> double;
+[[nodiscard]] auto current_thread_cpu_time_ms() -> double;
 [[nodiscard]] auto calculate_statistics(std::span<const double> samples_ms) -> SampleStatistics;
 
 } // namespace gamebench::core

@@ -21,7 +21,8 @@ TEST(WorkloadTest, IntegerWorkloadIsDeterministic) {
       .working_set_bytes = 0,
       .vulkan_mode = gamebench::core::VulkanMode::NoSubmit,
       .audio_buffer_size = 1024,
-      .sample_rate = 48000};
+      .sample_rate = 48000,
+      .cpu_affinity = {}};
   const auto first = workload->execute(config);
   const auto second = workload->execute(config);
 
@@ -62,6 +63,7 @@ TEST(WorkloadTest, SchedulerWorkloadIsDeterministicAcrossModes) {
         .vulkan_mode = gamebench::core::VulkanMode::NoSubmit,
         .audio_buffer_size = 1024,
         .sample_rate = 48000,
+        .cpu_affinity = {},
     };
     const auto output = workload->execute(config);
     EXPECT_TRUE(output.valid);
@@ -96,6 +98,7 @@ TEST(WorkloadTest, EcsWorkloadMatchesAcrossLayouts) {
         .vulkan_mode = gamebench::core::VulkanMode::NoSubmit,
         .audio_buffer_size = 1024,
         .sample_rate = 48000,
+        .cpu_affinity = {},
     };
     const auto output = workload->execute(config);
     EXPECT_TRUE(output.valid);
@@ -128,6 +131,7 @@ TEST(WorkloadTest, MemoryWorkloadSupportsAllAccessPatterns) {
         .vulkan_mode = gamebench::core::VulkanMode::NoSubmit,
         .audio_buffer_size = 1024,
         .sample_rate = 48000,
+        .cpu_affinity = {},
     };
     const auto output = workload->execute(config);
     EXPECT_TRUE(output.valid);
@@ -154,6 +158,7 @@ TEST(WorkloadTest, SceneWorkloadKeepsSameWorkAcrossThreadCounts) {
         .vulkan_mode = gamebench::core::VulkanMode::NoSubmit,
         .audio_buffer_size = 1024,
         .sample_rate = 48000,
+        .cpu_affinity = {},
     };
     const auto output = workload->execute(config);
     EXPECT_TRUE(output.valid);
@@ -188,6 +193,7 @@ TEST(WorkloadTest, SimulationAndAudioWorkloadsAreThreadDeterministic) {
           .vulkan_mode = gamebench::core::VulkanMode::NoSubmit,
           .audio_buffer_size = 256,
           .sample_rate = 48000,
+          .cpu_affinity = {},
       };
       const auto output = workload->execute(config);
       EXPECT_TRUE(output.valid) << workload_id;

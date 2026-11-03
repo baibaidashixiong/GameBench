@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -15,6 +16,10 @@ struct SystemInfo {
   std::string compiler_version{"Unknown"};
   std::string build_type{"Unknown"};
   std::string cpu_governor{"Unknown"};
+  std::optional<double> current_frequency_mhz;
+  std::optional<double> minimum_frequency_mhz;
+  std::optional<double> maximum_frequency_mhz;
+  std::optional<double> package_temperature_celsius;
   std::vector<std::string> cpu_features;
 };
 

@@ -27,6 +27,12 @@ target_compile_options(
 )
 
 find_package(Threads REQUIRED)
+if(GAMEBENCH_ENABLE_HWLOC)
+  find_package(PkgConfig QUIET)
+  if(PkgConfig_FOUND)
+    pkg_check_modules(HWLOC QUIET IMPORTED_TARGET hwloc)
+  endif()
+endif()
 if(GAMEBENCH_ENABLE_VULKAN)
   find_package(Vulkan QUIET)
 endif()
@@ -52,6 +58,9 @@ add_library(gamebench_core STATIC
   src/core/runner.cpp
   src/core/timing.cpp
   src/platform/system_info.cpp
+  src/platform/cpu_topology.cpp
+  src/platform/cpu_affinity.cpp
+  src/profiler/hardware_counters.cpp
   src/runtime/job_system.cpp
   src/runtime/memory_system.cpp
   src/simulation/ecs.cpp
@@ -62,6 +71,14 @@ add_library(gamebench_core STATIC
 )
 target_include_directories(gamebench_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_link_libraries(gamebench_core PUBLIC Threads::Threads gamebench_warnings)
+
+if(HWLOC_FOUND)
+  target_compile_definitions(gamebench_core PUBLIC GAMEBENCH_HAS_HWLOC=1)
+  target_link_libraries(gamebench_core PUBLIC PkgConfig::HWLOC)
+  message(STATUS "hwloc 已启用: ${HWLOC_VERSION}")
+else()
+  message(STATUS "hwloc 未找到，CPU 拓扑将使用 sysfs 与 Linux 基础接口降级")
+endif()
 
 if(Vulkan_FOUND)
   target_sources(gamebench_core PRIVATE src/renderer/vulkan_context.cpp)
@@ -83,9 +100,11 @@ if(GAMEBENCH_BUILD_TESTS)
     tests/ai_test.cpp
     tests/animation_test.cpp
     tests/audio_test.cpp
+    tests/cpu_topology_test.cpp
     tests/cli_test.cpp
     tests/ecs_test.cpp
     tests/memory_system_test.cpp
+    tests/profiler_test.cpp
     tests/physics_test.cpp
     tests/smoke_test.cpp
     tests/timing_test.cpp

@@ -26,6 +26,8 @@ struct RunConfig {
   VulkanMode vulkan_mode{VulkanMode::NoSubmit};
   std::uint32_t audio_buffer_size{1024};
   std::uint32_t sample_rate{48000};
+  std::vector<unsigned> cpu_affinity;
+  bool hardware_counters{};
   std::uint64_t seed{1337};
   std::uint64_t objects{65536};
   std::uint64_t iterations{1};

@@ -27,4 +27,8 @@
 - 实现 Agent 决策树、A* Navigation 查询和路径生成工作负载。
 - 实现多音源 FIR、上采样、线性重采样、Reverb 与 Stereo Mixing 离线 Audio DSP 工作负载。
 - 增加 Audio Buffer 与采样率配置；当前环境缺少 Jolt Physics，原生 Physics 后端保持可用。
+- 使用 hwloc 检测 CPU、SMT、NUMA 和缓存层级，并通过 sysfs 读取频率、温度与 Governor 信息。
+- 实现可恢复的 CPU Affinity 配置，主线程与 Worker 可绑定到指定逻辑 CPU 集合。
+- 实现可选 `perf_event_open` cycles、instructions、IPC、branch/cache miss 和 context switch 采集。
+- 增加关键路径、主线程 CPU 时间、Worker 忙碌时间和主线程迁移统计。
 

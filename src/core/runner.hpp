@@ -3,7 +3,9 @@
 #include "benchmark/workload.hpp"
 #include "core/config.hpp"
 #include "core/timing.hpp"
+#include "platform/cpu_topology.hpp"
 #include "platform/system_info.hpp"
+#include "profiler/hardware_counters.hpp"
 
 #include <cstdint>
 #include <optional>
@@ -15,7 +17,13 @@ namespace gamebench::core {
 struct BenchmarkRun {
   unsigned thread_count{};
   std::vector<double> samples_ms;
+  std::vector<double> main_thread_cpu_ms;
   SampleStatistics statistics;
+  double main_thread_time_ms{};
+  double critical_path_time_ms{};
+  std::optional<double> worker_thread_time_ms;
+  std::optional<double> total_cpu_work_ms;
+  std::uint64_t main_thread_cpu_migrations{};
   std::uint64_t operations{};
   std::uint64_t checksum{};
   bool valid{};
@@ -37,6 +45,8 @@ struct BenchmarkResult {
   std::string backend{"synthetic"};
   RunConfig config;
   platform::SystemInfo system;
+  platform::CpuTopology topology;
+  std::optional<profiler::HardwareCounterResult> hardware_counters;
   std::vector<BenchmarkRun> runs;
   std::vector<ThreadScaling> thread_scaling;
   bool valid{};

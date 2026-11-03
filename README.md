@@ -47,11 +47,14 @@ gamebench run --workload physics --threads 8 --objects 50000
 gamebench run --workload animation --threads 1,2,4,8
 gamebench run --workload ai --threads 1,2,4,8
 gamebench run --workload audio --buffer-size 1024 --sample-rate 48000
+gamebench run --workload scheduler --threads 2 --cpu-affinity 0,1 --hardware-counters
 gamebench run --workload integer --format csv --output result.csv
 gamebench compare result-a.json result-b.json
 ```
 
 当前注册了 `integer`、`scheduler`、`ecs`、`memory`、`scene`、`vulkan`、`physics`、`animation`、`ai` 和 `audio` 工作负载。Vulkan 不可用时对应结果会标记为 `skipped`。Physics 当前使用原生轻量后端；当前环境未安装 Jolt Physics，因此 Jolt 后端尚未启用。后续工作负载只有在实现并通过校验后才会出现在 `gamebench list` 中。具体参数以 `gamebench --help` 的输出为准。
+
+`system-info` 会报告 hwloc 检测出的逻辑处理器、物理核心、SMT、NUMA、缓存、允许 CPU 列表以及可读取的频率和温度。可用 `--cpu-affinity 0,2`、`--physical-core 0` 或 `--numa-node 0` 选择绑定集合。无法可靠识别的 CCD 或 P/E Core 类型会明确显示 `Unknown`。硬件计数器受 `perf_event_open` 权限限制，不可用时结果保留为 `available: false`。
 
 ## 项目状态
 

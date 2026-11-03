@@ -127,7 +127,7 @@ void SchedulerWorkload::ensure_system(const WorkloadConfig& config) {
       .worker_count = worker_count,
       .main_thread_participates = config.thread_count > 1,
       .scheduler = config.scheduler,
-      .cpu_affinity = {},
+      .cpu_affinity = worker_affinity(config),
   });
 }
 
