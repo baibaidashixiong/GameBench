@@ -15,7 +15,8 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
                                          const benchmark::WorkloadConfig& workload_config,
                                          std::uint64_t iterations, bool measure, BenchmarkRun& run,
                                          std::vector<double>* worker_busy_samples,
-                                         std::vector<double>* total_cpu_work_samples) {
+                                         std::vector<double>* total_cpu_work_samples,
+                                         std::vector<benchmark::ProcessMetrics>* process_samples) {
   for (std::uint64_t iteration = 0; iteration < iterations; ++iteration) {
     const auto start = SteadyClock::now();
     const auto cpu_start = current_thread_cpu_time_ms();
@@ -38,6 +39,9 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
     }
     if (output.vulkan) {
       run.vulkan = output.vulkan;
+    }
+    if (output.process) {
+      run.process = output.process;
     }
     if (!output.simd_backend.empty()) {
       run.simd_backend = output.simd_backend;
@@ -64,6 +68,15 @@ void BenchmarkRunner::execute_iterations(benchmark::Workload& workload,
         }
         if (total_cpu_work_samples != nullptr) {
           total_cpu_work_samples->push_back(main_thread_cpu_ms + output.scheduling->worker_busy_ms);
+        }
+      } else if (output.process) {
+        if (process_samples != nullptr) {
+          auto process = *output.process;
+          process.coordinator_cpu_ms = main_thread_cpu_ms;
+          process_samples->push_back(process);
+        }
+        if (total_cpu_work_samples != nullptr) {
+          total_cpu_work_samples->push_back(main_thread_cpu_ms + output.process->child_cpu_ms);
         }
       }
       if (cpu_before >= 0 && cpu_after >= 0 && cpu_before != cpu_after) {
@@ -146,13 +159,36 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
     run_result.operations = 0;
     std::vector<double> worker_busy_samples;
     std::vector<double> total_cpu_work_samples;
+    std::vector<benchmark::ProcessMetrics> process_samples;
     execute_iterations(workload, workload_config, config.repetitions, true, run_result,
-                       &worker_busy_samples, &total_cpu_work_samples);
+                       &worker_busy_samples, &total_cpu_work_samples, &process_samples);
     run_result.statistics = calculate_statistics(run_result.samples_ms);
     run_result.main_thread_time_ms = calculate_statistics(run_result.main_thread_cpu_ms).median_ms;
     run_result.critical_path_time_ms = run_result.statistics.median_ms;
     if (!worker_busy_samples.empty()) {
       run_result.worker_thread_time_ms = calculate_statistics(worker_busy_samples).median_ms;
+    }
+    if (!process_samples.empty()) {
+      run_result.process = process_samples.front();
+      auto median = [&process_samples](auto member) {
+        std::vector<double> values;
+        values.reserve(process_samples.size());
+        for (const auto& sample : process_samples) {
+          values.push_back(sample.*member);
+        }
+        return calculate_statistics(values).median_ms;
+      };
+      run_result.process->coordinator_cpu_ms =
+          median(&benchmark::ProcessMetrics::coordinator_cpu_ms);
+      run_result.process->main_process_cpu_ms =
+          median(&benchmark::ProcessMetrics::main_process_cpu_ms);
+      run_result.process->auxiliary_cpu_ms = median(&benchmark::ProcessMetrics::auxiliary_cpu_ms);
+      run_result.process->child_cpu_ms = median(&benchmark::ProcessMetrics::child_cpu_ms);
+      run_result.process->peak_rss_kb =
+          std::ranges::max(process_samples, {}, &benchmark::ProcessMetrics::peak_rss_kb)
+              .peak_rss_kb;
+    }
+    if (!total_cpu_work_samples.empty()) {
       run_result.total_cpu_work_ms = calculate_statistics(total_cpu_work_samples).median_ms;
     }
     result.valid = result.valid && (run_result.valid || run_result.skipped);
@@ -162,12 +198,14 @@ auto BenchmarkRunner::run(benchmark::Workload& workload, const RunConfig& config
   const auto baseline = std::ranges::find_if(
       result.runs, [](const BenchmarkRun& run) { return run.thread_count == 1; });
   const auto& reference = baseline != result.runs.end() ? *baseline : result.runs.front();
+  result.scaling_reference_thread_count = reference.thread_count;
   for (const auto& run : result.runs) {
     const double speedup = reference.statistics.median_ms / run.statistics.median_ms;
-    result.thread_scaling.push_back(
-        {.thread_count = run.thread_count,
-         .speedup = speedup,
-         .efficiency = speedup / static_cast<double>(run.thread_count)});
+    const double normalized_threads = static_cast<double>(run.thread_count) /
+                                      static_cast<double>(result.scaling_reference_thread_count);
+    result.thread_scaling.push_back({.thread_count = run.thread_count,
+                                     .speedup = speedup,
+                                     .efficiency = speedup / normalized_threads});
   }
 
   if (config.hardware_counters) {

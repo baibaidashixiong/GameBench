@@ -51,20 +51,21 @@ gamebench run --workload audio --buffer-size 1024 --sample-rate 48000
 gamebench run --workload scheduler --threads 2 --cpu-affinity 0,1 --hardware-counters
 gamebench profile list
 gamebench run
-gamebench run --profile source2-like --threads 1,2,4,8,16
+gamebench run --threads 5,8,16
+gamebench run --workload game-frame --threads 1,2,4,8
 gamebench run --workload integer --format csv --output result.csv
 gamebench compare result-a.json result-b.json
 ```
 
-当前注册了 `integer`、`scheduler`、`ecs`、`memory`、`scene`、`vulkan`、`physics`、`animation`、`ai` 和 `audio` 工作负载。Vulkan 不可用时对应结果会标记为 `skipped`。Physics 当前使用原生轻量后端；当前环境未安装 Jolt Physics，因此 Jolt 后端尚未启用。后续工作负载只有在实现并通过校验后才会出现在 `gamebench list` 中。具体参数以 `gamebench --help` 的输出为准。
+当前注册了 `integer`、`scheduler`、`ecs`、`memory`、`scene`、`vulkan`、`physics`、`animation`、`ai`、`audio`、`game-frame` 和默认的 `game-process-mix` 工作负载。Vulkan 不可用时对应结果会标记为 `skipped`。Physics 当前使用原生轻量后端；当前环境未安装 Jolt Physics，因此 Jolt 后端尚未启用。后续工作负载只有在实现并通过校验后才会出现在 `gamebench list` 中。具体参数以 `gamebench --help` 的输出为准。
 
 `engine-info` 显示真实引擎适配器状态。当前版本提供 Engine Adapter 契约、Godot 安装探测以及 Source 2 显式工具链探测，尚未启用引擎执行后端；UE5 与 O3DE 明确标记为未实现。Source 2 可使用 `SOURCE2_BIN=/path/to/tool` 或 `SOURCE2_ROOT=/path/to/root` 指定本地工具链。
 
 `source2-like` Profile 不启动真实 Source 2，而是把 ECS、三组 Scene、Physics、Animation、AI、SSE2 粒子、Audio 和 Vulkan 录制组合成一条带依赖的 Synthetic 游戏帧。x86-64 使用 SSE2，其他架构回退到标量实现；实际后端记录在结果 JSON 的 `simd_backend` 中。具体规模和限制见 `docs/source2-like-profile.md`。
 
-直接执行 `gamebench run` 会使用固定规模的 `source2-like` Profile v2、自动物理核心线程梯度、60 帧预热和 300 帧采样。需要更短调试运行时可以用 `--warmup 10 --repetitions 30` 显式覆盖。
+直接执行 `gamebench run` 会启动默认的 `game-process-mix`：1 个主游戏进程和 4 个辅助进程，分别执行 Source 2-like 游戏帧、Scene、Physics、AI/Navigation 和 Audio 固定负载。默认自动生成从 5 开始的物理核心梯度，并执行 60 帧预热和 300 帧采样。需要更短调试运行时可以用 `--warmup 10 --repetitions 30` 显式覆盖。
 
-`--threads` 表示包含主线程在内的总执行参与者。`--threads 1` 不创建 Worker，由主线程通过 Job System 闭环执行全部任务；`--threads 2` 表示主线程加一个 Worker，依此类推。结果 JSON 和 CSV 会记录 `execution_mode` 与 `worker_count`，线程扩展性始终相对这一明确的 1 线程基线计算。
+进程组合负载中，`--threads` 表示所有子进程合计的执行参与者。四个辅助进程各固定使用一条执行流，剩余 `N-4` 条分配给主游戏进程，因此最低要求为 `--threads 5`。单进程 Job 工作负载仍遵循 `main-inline` / `main-plus-workers` 语义。JSON 和 CSV 会记录进程数、执行域、主进程与辅助进程 CPU 时间、启动时间和峰值子进程 RSS。
 
 `system-info` 会报告 hwloc 检测出的逻辑处理器、物理核心、SMT、NUMA、缓存、允许 CPU 列表以及可读取的频率和温度。可用 `--cpu-affinity 0,2`、`--physical-core 0` 或 `--numa-node 0` 选择绑定集合。无法可靠识别的 CCD 或 P/E Core 类型会明确显示 `Unknown`。硬件计数器受 `perf_event_open` 权限限制，不可用时结果保留为 `available: false`。
 

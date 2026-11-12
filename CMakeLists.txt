@@ -49,6 +49,8 @@ add_library(gamebench_core STATIC
   src/benchmark/integer_workload.cpp
   src/benchmark/memory_workload.cpp
   src/benchmark/physics_workload.cpp
+  src/benchmark/process_mix_workload.cpp
+  src/benchmark/process_worker.cpp
   src/benchmark/registry.cpp
   src/benchmark/scheduler_workload.cpp
   src/benchmark/scene_workload.cpp
@@ -114,6 +116,7 @@ if(GAMEBENCH_BUILD_TESTS)
     tests/memory_system_test.cpp
     tests/profiler_test.cpp
     tests/physics_test.cpp
+    tests/process_mix_test.cpp
     tests/smoke_test.cpp
     tests/timing_test.cpp
     tests/runner_test.cpp
@@ -125,6 +128,10 @@ if(GAMEBENCH_BUILD_TESTS)
     tests/vulkan_test.cpp
   )
   target_link_libraries(gamebench_tests PRIVATE gamebench_core GTest::gtest_main)
+  add_dependencies(gamebench_tests gamebench)
+  target_compile_definitions(
+    gamebench_tests PRIVATE GAMEBENCH_TEST_EXECUTABLE="$<TARGET_FILE:gamebench>"
+  )
   gtest_discover_tests(gamebench_tests TEST_FILTER "-VulkanTest.*")
   add_test(NAME VulkanTest COMMAND gamebench_tests --gtest_filter=VulkanTest.*)
   set_tests_properties(VulkanTest PROPERTIES ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0")

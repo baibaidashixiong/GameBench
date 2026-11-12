@@ -16,7 +16,7 @@ enum class MemoryPattern { Sequential, Random, PointerChasing, Strided };
 enum class VulkanMode { NoSubmit, GpuBacked };
 
 struct RunConfig {
-  std::string workload{"game-frame"};
+  std::string workload{"game-process-mix"};
   std::string profile{"source2-like"};
   bool suite_all{false};
   std::vector<unsigned> thread_counts;

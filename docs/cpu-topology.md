@@ -11,6 +11,7 @@ Affinity 配置以 Linux 逻辑 CPU 集合为准。用户可指定 CPU 列表、
 - 优先使用 hwloc 检测逻辑处理器、物理核心、SMT、NUMA 和 L1-L5 缓存对象。
 - 使用 `pthread_getaffinity_np` 与 `pthread_setaffinity_np` 读取和设置当前线程 Affinity，基准结束后恢复原集合。
 - `--cpu-affinity 0,2,4,6` 中第一个 CPU 绑定主线程，其余 CPU 依次绑定 Worker；集合数量不得少于线程数。
+- 默认五进程组合中，主游戏进程先获得 `threads-4` 个逻辑 CPU，随后 Scene、Physics、AI、Audio 辅助进程各获得一个逻辑 CPU。
 - `--physical-core` 与 `--numa-node` 通过 hwloc cpuset 映射到逻辑 CPU；没有 hwloc 时会明确报错，而不是猜测映射。
 - 无 hwloc 的构建使用 sysfs `topology`、`node` 与 `cache` 信息作为基础降级。
 - CCD、P/E Core 类型没有可迁移的统一 Linux 接口，因此当前固定报告 `Unknown`。

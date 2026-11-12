@@ -35,6 +35,7 @@ struct BenchmarkRun {
   std::vector<std::string> warnings;
   std::optional<benchmark::SchedulingMetrics> scheduling;
   std::optional<benchmark::VulkanDiagnostics> vulkan;
+  std::optional<benchmark::ProcessMetrics> process;
   std::string simd_backend;
 };
 
@@ -54,6 +55,7 @@ struct BenchmarkResult {
   std::optional<profiler::HardwareCounterResult> hardware_counters;
   std::optional<benchmark::FrameProfile> frame_profile;
   std::vector<BenchmarkRun> runs;
+  unsigned scaling_reference_thread_count{1};
   std::vector<ThreadScaling> thread_scaling;
   bool valid{};
 };
@@ -67,7 +69,8 @@ private:
                                  const benchmark::WorkloadConfig& workload_config,
                                  std::uint64_t iterations, bool measure, BenchmarkRun& run,
                                  std::vector<double>* worker_busy_samples = nullptr,
-                                 std::vector<double>* total_cpu_work_samples = nullptr);
+                                 std::vector<double>* total_cpu_work_samples = nullptr,
+                                 std::vector<benchmark::ProcessMetrics>* process_samples = nullptr);
 };
 
 } // namespace gamebench::core

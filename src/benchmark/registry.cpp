@@ -8,6 +8,7 @@
 #include "benchmark/integer_workload.hpp"
 #include "benchmark/memory_workload.hpp"
 #include "benchmark/physics_workload.hpp"
+#include "benchmark/process_mix_workload.hpp"
 #include "benchmark/scene_workload.hpp"
 #include "benchmark/scheduler_workload.hpp"
 #include "benchmark/vulkan_workload.hpp"
@@ -78,6 +79,9 @@ auto WorkloadRegistry::create_default() -> WorkloadRegistry {
                [] { return std::make_unique<AudioWorkload>(); });
   registry.add({"game-frame", "2", "engine-like", "版本化 Profile 驱动的单帧 Synthetic CPU 负载"},
                [] { return std::make_unique<CompositeFrameWorkload>(); });
+  registry.add({"game-process-mix", "1", "engine-like",
+                "一个主游戏进程与四个辅助进程并发的固定 Synthetic CPU 负载"},
+               [] { return std::make_unique<ProcessMixWorkload>(); });
   return registry;
 }
 

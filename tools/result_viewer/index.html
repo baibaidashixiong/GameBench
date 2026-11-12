@@ -125,11 +125,12 @@
           <thead>
             <tr>
               <th>文件</th><th>工作负载</th><th>后端</th><th>线程</th><th>Worker</th><th>模式</th>
+              <th>执行域</th><th>进程</th>
               <th>中位 ms</th><th>P99 ms</th><th>吞吐 ops/s</th>
               <th>扩展指数</th><th>主线程 ms</th><th>迁移</th><th>状态</th>
             </tr>
           </thead>
-          <tbody id="result-body"><tr><td colspan="13" class="empty">无数据</td></tr></tbody>
+          <tbody id="result-body"><tr><td colspan="15" class="empty">无数据</td></tr></tbody>
         </table>
       </div>
     </section>
@@ -183,6 +184,8 @@
             threads: threadCount,
             workers: Number(run.worker_count || 0),
             mode: text(run.execution_mode, '—'),
+            domain: text(run.execution_domain, '—'),
+            processes: Number(run.processes?.total_processes || 0),
             median: Number(run.median_frame_time_ms),
             p99: Number(run.p99_frame_time_ms),
             throughput: Number(score?.throughput_operations_per_second || 0),
@@ -245,7 +248,7 @@
       if (state.rows.length === 0) {
         const row = document.createElement('tr');
         const cell = document.createElement('td');
-        cell.colSpan = 13;
+        cell.colSpan = 15;
         cell.className = 'empty';
         cell.textContent = '无数据';
         row.append(cell);
@@ -255,6 +258,7 @@
       for (const row of state.rows) {
         const tr = document.createElement('tr');
         const values = [row.file, row.workload, row.backend, row.threads, row.workers, row.mode,
+          row.domain, row.processes,
           number(row.median), number(row.p99),
           number(row.throughput, 0), number(row.scalingScore, 1), number(row.mainThread), row.migrations];
         for (const value of values) {
@@ -383,10 +387,10 @@
       render();
     });
     exportCsv.addEventListener('click', () => {
-      const header = ['file','workload','backend','threads','worker_count','execution_mode','median_ms','p99_ms','throughput_ops_s','scaling_score','main_thread_ms','migrations','status'];
+      const header = ['file','workload','backend','threads','worker_count','execution_mode','execution_domain','process_count','median_ms','p99_ms','throughput_ops_s','scaling_score','main_thread_ms','migrations','status'];
       const lines = [header.join(',')];
       for (const row of state.rows) {
-        lines.push([row.file, row.workload, row.backend, row.threads, row.workers, row.mode, row.median, row.p99,
+        lines.push([row.file, row.workload, row.backend, row.threads, row.workers, row.mode, row.domain, row.processes, row.median, row.p99,
           row.throughput, row.scalingScore, row.mainThread, row.migrations, row.status]
           .map(value => `"${String(value).replaceAll('"', '""')}"`).join(','));
       }

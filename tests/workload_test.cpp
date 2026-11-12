@@ -35,7 +35,7 @@ TEST(WorkloadTest, RegistryListsRegisteredWorkloads) {
   const auto registry = gamebench::benchmark::WorkloadRegistry::create_default();
   EXPECT_TRUE(registry.contains("integer"));
   EXPECT_FALSE(registry.contains("missing"));
-  EXPECT_EQ(registry.descriptors().size(), 11U);
+  EXPECT_EQ(registry.descriptors().size(), 12U);
 }
 
 TEST(WorkloadTest, SchedulerWorkloadIsDeterministicAcrossModes) {

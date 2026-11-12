@@ -2,6 +2,7 @@
 
 #include "benchmark/engine_adapter.hpp"
 #include "benchmark/frame_profile.hpp"
+#include "benchmark/process_worker.hpp"
 #include "benchmark/registry.hpp"
 #include "core/logger.hpp"
 #include "core/result_manager.hpp"
@@ -79,9 +80,9 @@ void print_help() {
             << "run 选项:\n"
             << "  --workload <id>          工作负载 ID\n"
             << "  --profile <id>           选择单帧合成负载 Profile\n"
-            << "                           默认: source2-like + 自动线程梯度\n"
+            << "                           默认: source2-like 多进程组合 + 自动线程梯度\n"
             << "  --suite all              运行全部已实现工作负载\n"
-            << "  --threads <1,2,4>        总执行参与者数（含主线程）\n"
+            << "  --threads <列表>         总执行参与者数（默认多进程最低 5）\n"
             << "  --mode <reproducible|realistic>\n"
             << "  --mode <no-submit|gpu-backed> Vulkan 执行模式\n"
             << "  --scheduler <global-queue|static-partitioning|work-stealing>\n"
@@ -258,9 +259,18 @@ void print_frame_profiles() {
 void print_result(const BenchmarkResult& result, const std::filesystem::path& output) {
   std::cout << "工作负载: " << result.benchmark_id << '\n';
   for (const auto& run : result.runs) {
-    std::cout << "  线程 " << run.thread_count << ": 中位 " << std::fixed << std::setprecision(3)
-              << run.statistics.median_ms << " ms, P99 " << run.statistics.p99_ms << " ms, 校验 "
+    std::cout << "  执行参与者 " << run.thread_count << ": 中位 " << std::fixed
+              << std::setprecision(3) << run.statistics.median_ms << " ms, P99 "
+              << run.statistics.p99_ms << " ms, 校验 "
               << (run.skipped ? "跳过" : (run.valid ? "通过" : "失败")) << '\n';
+    if (run.process) {
+      std::cout << "    进程 " << run.process->total_processes << " (协调进程 "
+                << run.process->coordinator_processes << " + 游戏进程 "
+                << run.process->game_processes << "：主进程 " << run.process->main_game_processes
+                << " + 辅助进程 " << run.process->auxiliary_processes << "), 主进程线程 "
+                << run.process->main_thread_count << ", 子进程 CPU " << run.process->child_cpu_ms
+                << " ms\n";
+    }
   }
   std::cout << "结果: " << output << '\n';
 }
@@ -303,9 +313,11 @@ auto run_command(std::span<const std::string_view> arguments) -> int {
   auto config = parse_run_config(arguments);
   if (config.thread_counts.empty()) {
     const auto physical_cores = platform::detect_cpu_topology().physical_cores;
-    config.thread_counts.push_back(1);
+    const auto minimum_threads = config.workload == "game-process-mix" ? 5U : 1U;
+    config.thread_counts.push_back(minimum_threads);
     for (const auto candidate : {2U, 4U, 8U, 16U}) {
-      if (candidate <= physical_cores && candidate != config.thread_counts.back()) {
+      if (candidate >= minimum_threads && candidate <= physical_cores &&
+          candidate != config.thread_counts.back()) {
         config.thread_counts.push_back(candidate);
       }
     }
@@ -334,7 +346,7 @@ auto run_command(std::span<const std::string_view> arguments) -> int {
       throw std::invalid_argument("未知工作负载: " + workload_id + "，使用 list 查看可用项");
     }
 
-    std::cout << "运行 " << workload_id << "，线程数 ";
+    std::cout << "运行 " << workload_id << "，执行参与者 ";
     for (std::size_t index = 0; index < config.thread_counts.size(); ++index) {
       if (index != 0) {
         std::cout << ',';
@@ -369,7 +381,7 @@ auto parse_run_config(std::span<const std::string_view> arguments) -> RunConfig 
       config.suite_all = false;
     } else if (option == "--profile") {
       config.profile = option_value(arguments, index);
-      config.workload = "game-frame";
+      config.workload = "game-process-mix";
       config.suite_all = false;
     } else if (option == "--suite") {
       const auto suite = option_value(arguments, index);
@@ -463,6 +475,9 @@ auto CliApplication::run(std::span<const std::string_view> arguments) const -> i
     }
     if (command == "run") {
       return run_command(rest);
+    }
+    if (command == "process-worker") {
+      return benchmark::run_process_worker(rest);
     }
     if (command == "list") {
       print_workloads(benchmark::WorkloadRegistry::create_default());

@@ -81,7 +81,10 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
   output << ",\n  \"execution_model\": {\n    \"version\": 2,\n"
             "    \"thread_count_semantics\": \"total-execution-participants\",\n"
             "    \"job_system_single_thread_mode\": \"main-inline\",\n"
-            "    \"job_system_multi_thread_mode\": \"main-plus-workers\"\n  }";
+            "    \"job_system_multi_thread_mode\": \"main-plus-workers\",\n"
+            "    \"default_process_topology\": \"one-main-game-four-auxiliary\",\n"
+            "    \"minimum_game_processes\": 5,\n"
+            "    \"default_os_processes\": 6\n  }";
   output << ",\n  \"validation_status\": \"" << top_status << '"' << ",\n  \"configuration\": {\n"
          << "    \"workload\": ";
   write_escaped_json(output, result.config.workload);
@@ -208,6 +211,11 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
     output << "    {\n      \"thread_count\": " << run.thread_count
            << ",\n      \"worker_count\": " << run.worker_count << ",\n      \"execution_mode\": ";
     write_escaped_json(output, run.execution_mode);
+    output << ",\n      \"execution_domain\": ";
+    const auto execution_domain = run.process      ? "multi-process"
+                                  : run.scheduling ? "single-process-threaded"
+                                                   : "single-process-serial";
+    write_escaped_json(output, execution_domain);
     output << ",\n      \"samples_ms\": [";
     for (std::size_t sample_index = 0; sample_index < run.samples_ms.size(); ++sample_index) {
       if (sample_index != 0) {
@@ -229,6 +237,24 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
     }
     if (run.total_cpu_work_ms) {
       output << ",\n      \"total_cpu_work_ms\": " << *run.total_cpu_work_ms;
+    }
+    if (run.process) {
+      const auto& process = *run.process;
+      output << ",\n      \"processes\": {\n        \"coordinator_processes\": "
+             << process.coordinator_processes
+             << ",\n        \"game_processes\": " << process.game_processes
+             << ",\n        \"main_game_processes\": " << process.main_game_processes
+             << ",\n        \"auxiliary_processes\": " << process.auxiliary_processes
+             << ",\n        \"total_processes\": " << process.total_processes
+             << ",\n        \"main_thread_count\": " << process.main_thread_count
+             << ",\n        \"auxiliary_thread_count\": " << process.auxiliary_thread_count
+             << ",\n        \"total_thread_count\": " << process.total_thread_count
+             << ",\n        \"launch_ms\": " << process.launch_ms
+             << ",\n        \"coordinator_cpu_ms\": " << process.coordinator_cpu_ms
+             << ",\n        \"main_process_cpu_ms\": " << process.main_process_cpu_ms
+             << ",\n        \"auxiliary_cpu_ms\": " << process.auxiliary_cpu_ms
+             << ",\n        \"child_cpu_ms\": " << process.child_cpu_ms
+             << ",\n        \"peak_child_rss_kb\": " << process.peak_rss_kb << "\n      }";
     }
     output << ",\n      \"operations\": " << run.operations
            << ",\n      \"checksum\": " << run.checksum << ",\n      \"validation_status\": "
@@ -263,7 +289,8 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
     output << "\n    }";
   }
 
-  output << "\n  ],\n  \"thread_scaling\": [\n";
+  output << "\n  ],\n  \"thread_scaling_reference\": " << result.scaling_reference_thread_count
+         << ",\n  \"thread_scaling\": [\n";
   for (std::size_t index = 0; index < result.thread_scaling.size(); ++index) {
     const auto& scaling = result.thread_scaling[index];
     if (index != 0) {
@@ -292,7 +319,7 @@ void write_json(const BenchmarkResult& result, std::ostream& output) {
 
 void write_csv(const BenchmarkResult& result, std::ostream& output) {
   output << "benchmark_id,benchmark_version,thread_count,worker_count,execution_mode,"
-            "mean_frame_time_ms,"
+            "process_count,main_processes,auxiliary_processes,mean_frame_time_ms,"
             "median_frame_time_ms,p95_frame_time_ms,p99_frame_time_ms,p99_9_frame_time_ms,"
             "maximum_frame_time_ms,critical_path_time_ms,main_thread_time_ms,"
             "main_thread_cpu_migrations,speedup,efficiency,operations,checksum,"
@@ -302,7 +329,10 @@ void write_csv(const BenchmarkResult& result, std::ostream& output) {
     const auto& run = result.runs[index];
     const auto& scaling = result.thread_scaling[index];
     output << result.benchmark_id << ',' << result.benchmark_version << ',' << run.thread_count
-           << ',' << run.worker_count << ',' << run.execution_mode << ',' << run.statistics.mean_ms
+           << ',' << run.worker_count << ',' << run.execution_mode << ','
+           << (run.process ? run.process->total_processes : 0U) << ','
+           << (run.process ? run.process->main_game_processes : 0U) << ','
+           << (run.process ? run.process->auxiliary_processes : 0U) << ',' << run.statistics.mean_ms
            << ',' << run.statistics.median_ms << ',' << run.statistics.p95_ms << ','
            << run.statistics.p99_ms << ',' << run.statistics.p999_ms << ','
            << run.statistics.maximum_ms << ',' << run.critical_path_time_ms << ','

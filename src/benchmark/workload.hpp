@@ -55,6 +55,23 @@ struct VulkanDiagnostics {
   std::uint32_t api_version{};
 };
 
+struct ProcessMetrics {
+  unsigned coordinator_processes{1};
+  unsigned game_processes{5};
+  unsigned main_game_processes{1};
+  unsigned auxiliary_processes{4};
+  unsigned total_processes{6};
+  unsigned main_thread_count{};
+  unsigned auxiliary_thread_count{4};
+  unsigned total_thread_count{};
+  double launch_ms{};
+  double coordinator_cpu_ms{};
+  double main_process_cpu_ms{};
+  double auxiliary_cpu_ms{};
+  double child_cpu_ms{};
+  double peak_rss_kb{};
+};
+
 struct WorkloadOutput {
   std::uint64_t checksum{};
   std::uint64_t operations{};
@@ -64,6 +81,7 @@ struct WorkloadOutput {
   std::vector<std::string> warnings;
   std::optional<SchedulingMetrics> scheduling;
   std::optional<VulkanDiagnostics> vulkan;
+  std::optional<ProcessMetrics> process;
   std::optional<double> measured_time_ms;
   std::string simd_backend;
   unsigned worker_count{};

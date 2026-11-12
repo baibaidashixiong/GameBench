@@ -4,6 +4,8 @@
 
 `source2-like` 是 GameBench 的 Synthetic 单帧负载，不启动 Source 2、CS2 或其他真实游戏。它模拟现代游戏引擎一帧中的 CPU 任务组成，用于比较调度、拓扑和缓存配置，不代表任何真实游戏的绝对成绩。
 
+默认 `gamebench run` 使用 `game-process-mix` 包装本 Profile，并同时运行 Scene、Physics、AI 和 Audio 四个辅助进程。本文描述单进程主负载本身；使用 `--workload game-frame` 可单独测试它。
+
 Profile 与 `game-frame` 工作负载版本均为 `2`，结果 JSON 中的 `configuration.profile`、`benchmark_version` 和 `frame_profile` 共同定义测量语义。v2 扩大了固定工作集并加入 SIMD 粒子阶段，结果不得与 v1 基线直接比较。
 
 ## 默认规模
@@ -42,15 +44,13 @@ JSON 中的 `operations` 是当前线程配置全部采样帧的累计固定操�
 
 ```bash
 gamebench profile list
-gamebench run
-gamebench run --profile source2-like --threads 1,2,4,8,16 --warmup 120 --repetitions 600
-gamebench run --threads 1,2,4,8 --warmup 30 --repetitions 300
-gamebench run --profile source2-like --threads 8 --cpu-affinity 0,1,2,3,4,5,6,7
+gamebench run --workload game-frame --threads 1,2,4,8,16
+gamebench run --workload game-frame --threads 8 --cpu-affinity 0,1,2,3,4,5,6,7
 ```
 
 正式比较必须使用 Release 构建、固定 Profile 版本、固定种子和相同 Affinity。Debug 数据只用于正确性调试。
 
-直接执行 `gamebench run` 时使用 Profile v2 的固定规模、自动物理核心线程梯度、60 帧预热和 300 帧采样。每一帧执行相同阶段和规模，不注入人工帧时间波动；需要更长采样窗口时可继续提高 `--repetitions`。
+单进程 `game-frame` 与默认五进程组合都使用固定规模、60 帧预热和 300 帧采样。每一帧执行相同阶段和规模，不注入人工帧时间波动；需要更长采样窗口时可继续提高 `--repetitions`。
 
 ## 限制
 

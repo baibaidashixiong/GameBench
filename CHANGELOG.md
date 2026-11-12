@@ -48,4 +48,7 @@
 - 统一 `threads` 为包含主线程的总执行参与者；1 线程改为主线程闭环执行，不再创建 Worker。
 - Job System 支持零 Worker 主线程消费模式，并覆盖全部 Job 型工作负载。
 - 增加实际执行模型与 Worker 数量结果字段，并将主线程 Affinity 固定到指定集合的首个 CPU；CPU 时间改为按每帧样本计算一致的中位数。
+- 将无参数默认 Benchmark 改为 `game-process-mix`：1 个主游戏进程与 Scene、Physics、AI、Audio 共 4 个辅助进程并发执行。
+- 增加 `posix_spawn` 子进程监督、READY/任务/结果 Pipe 协议、帧超时和 SIGTERM 清理；默认最低拓扑为 5 个进程。
+- 增加父协调进程、主游戏进程和辅助进程的 CPU/RSS/启动时间结果，并将扩展性基线泛化为 `thread_scaling_reference`。
 

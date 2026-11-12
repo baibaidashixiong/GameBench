@@ -56,19 +56,19 @@ TEST(CliTest, ParsesAffinityAndHardwareCounters) {
   EXPECT_TRUE(config.hardware_counters);
 }
 
-TEST(CliTest, ProfileSelectsGameFrameWorkload) {
+TEST(CliTest, ProfileSelectsDefaultProcessMixWorkload) {
   constexpr std::array arguments{
       std::string_view{"--profile"},
       std::string_view{"source2-like"},
   };
   const auto config = gamebench::core::parse_run_config(arguments);
   EXPECT_EQ(config.profile, "source2-like");
-  EXPECT_EQ(config.workload, "game-frame");
+  EXPECT_EQ(config.workload, "game-process-mix");
 }
 
 TEST(CliTest, UsesSource2LikeDefaults) {
   const auto config = gamebench::core::parse_run_config({});
-  EXPECT_EQ(config.workload, "game-frame");
+  EXPECT_EQ(config.workload, "game-process-mix");
   EXPECT_EQ(config.profile, "source2-like");
   EXPECT_TRUE(config.thread_counts.empty());
   EXPECT_EQ(config.warmup_iterations, 60U);

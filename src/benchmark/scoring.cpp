@@ -6,7 +6,9 @@ auto calculate_scores(const core::BenchmarkResult& result) -> ScoreDocument {
   ScoreDocument document;
   document.backend = result.backend;
   document.comparable_across_workloads = false;
-  document.note = "评分为单工作负载吞吐与相对 1 线程扩展指数；不同工作负载的操作单位不可直接相加";
+  document.note = "评分为单工作负载吞吐与相对 " +
+                  std::to_string(result.scaling_reference_thread_count) +
+                  " 执行参与者基线的扩展指数；不同工作负载的操作单位不可直接相加";
   document.points.reserve(result.runs.size());
   for (std::size_t index = 0; index < result.runs.size(); ++index) {
     const auto& run = result.runs[index];
