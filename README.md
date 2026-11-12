@@ -67,6 +67,8 @@ gamebench compare result-a.json result-b.json
 
 进程组合负载中，`--threads` 表示所有子进程合计的执行参与者。四个辅助进程各固定使用一条执行流，剩余 `N-4` 条分配给主游戏进程，因此最低要求为 `--threads 5`。单进程 Job 工作负载仍遵循 `main-inline` / `main-plus-workers` 语义。JSON 和 CSV 会记录进程数、执行域、主进程与辅助进程 CPU 时间、启动时间和峰值子进程 RSS。
 
+运行结束后，控制台按每种执行参与者数量输出 `GameBench Score` 和吞吐量。基线配置固定为 `100` 分；该分数只用于同一工作负载内的相对扩展性比较，不能跨工作负载相加。
+
 `system-info` 会报告 hwloc 检测出的逻辑处理器、物理核心、SMT、NUMA、缓存、允许 CPU 列表以及可读取的频率和温度。可用 `--cpu-affinity 0,2`、`--physical-core 0` 或 `--numa-node 0` 选择绑定集合。无法可靠识别的 CCD 或 P/E Core 类型会明确显示 `Unknown`。硬件计数器受 `perf_event_open` 权限限制，不可用时结果保留为 `available: false`。
 
 ## 项目状态

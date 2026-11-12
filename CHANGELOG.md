@@ -51,4 +51,5 @@
 - 将无参数默认 Benchmark 改为 `game-process-mix`：1 个主游戏进程与 Scene、Physics、AI、Audio 共 4 个辅助进程并发执行。
 - 增加 `posix_spawn` 子进程监督、READY/任务/结果 Pipe 协议、帧超时和 SIGTERM 清理；默认最低拓扑为 5 个进程。
 - 增加父协调进程、主游戏进程和辅助进程的 CPU/RSS/启动时间结果，并将扩展性基线泛化为 `thread_scaling_reference`。
+- 在命令结束后输出每种执行参与者数量的 `GameBench Score` 和 operations/s 吞吐量，明确基线分数与可比范围。
 

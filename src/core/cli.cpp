@@ -4,6 +4,7 @@
 #include "benchmark/frame_profile.hpp"
 #include "benchmark/process_worker.hpp"
 #include "benchmark/registry.hpp"
+#include "benchmark/scoring.hpp"
 #include "core/logger.hpp"
 #include "core/result_manager.hpp"
 #include "core/result_reader.hpp"
@@ -272,6 +273,15 @@ void print_result(const BenchmarkResult& result, const std::filesystem::path& ou
                 << " ms\n";
     }
   }
+  const auto scores = benchmark::calculate_scores(result);
+  std::cout << "评分（基线 " << result.scaling_reference_thread_count
+            << " 执行参与者 = 100，仅当前工作负载内可比）:\n";
+  for (const auto& point : scores.points) {
+    std::cout << "  GameBench Score " << point.thread_count << ": " << std::fixed
+              << std::setprecision(1) << point.thread_scaling_score << " | 吞吐 " << std::scientific
+              << std::setprecision(3) << point.throughput_operations_per_second << " ops/s\n";
+  }
+  std::cout << std::defaultfloat;
   std::cout << "结果: " << output << '\n';
 }
 
